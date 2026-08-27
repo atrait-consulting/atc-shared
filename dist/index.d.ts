@@ -14,3 +14,5 @@
 export { appLabel, HUB, idAnonKey, idUrl } from './config.js';
 export { readMcClaims, type McClaims, type McRole } from './jwt.js';
 export { tokens, type AtcTokens } from './tokens.js';
+export { readSessionCookie, MARGE_EXPIRATION_S } from './session.js';
+export type { SessionCookie } from './session.js';

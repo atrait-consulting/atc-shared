@@ -12,6 +12,7 @@ export declare const HUB: {
     readonly portail: "/portail";
     readonly login: "/login";
     readonly refus: "/acces";
+    readonly rafraichir: "/auth/rafraichir";
     readonly signOut: "/auth/signout";
 };
 /** Nom lisible d'une application, pour les messages destinés à l'utilisateur. */

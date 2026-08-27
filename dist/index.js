@@ -14,3 +14,4 @@
 export { appLabel, HUB, idAnonKey, idUrl } from './config.js';
 export { readMcClaims } from './jwt.js';
 export { tokens } from './tokens.js';
+export { readSessionCookie, MARGE_EXPIRATION_S } from './session.js';

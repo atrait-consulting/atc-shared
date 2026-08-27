@@ -42,6 +42,10 @@ export const HUB = {
   portail: '/portail',
   login: '/login',
   refus: '/acces',
+  /* Renouvellement du jeton. Tourne en runtime Node côté portail : c'est le
+     seul endroit qui parle encore au service d'authentification, une fois par
+     heure et par session au lieu d'une fois par requête. */
+  rafraichir: '/auth/rafraichir',
   signOut: '/auth/signout',
 } as const
 
