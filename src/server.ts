@@ -2,23 +2,16 @@
  * Client Supabase côté serveur (Server Components, Route Handlers, Server Actions)
  * et gardes d'accès.
  */
-import { cookies, headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { redirect } from 'next/navigation'
-import { cookieDomainFor, hubUrl, idAnonKey, idUrl } from './config.js'
+import { HUB, idAnonKey, idUrl } from './config.js'
 import type { McRole } from './jwt.js'
 
 export async function createAtcServerClient() {
   const cookieStore = await cookies()
-  const host = (await headers()).get('host')
 
   return createServerClient(idUrl(), idAnonKey(), {
-    cookieOptions: {
-      domain: cookieDomainFor(host),
-      path: '/',
-      sameSite: 'lax',
-      secure: true,
-    },
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll: (list) => {
@@ -68,9 +61,15 @@ export async function appRole(appSlug: string): Promise<McRole | null> {
  */
 export async function requireApp(appSlug: string): Promise<void> {
   const user = await getAtcUser()
-  if (!user) redirect(`${hubUrl()}/login?next=${encodeURIComponent(appSlug)}`)
-  if (!(await hasAppAccess(appSlug))) redirect(`${hubUrl()}/acces?app=${appSlug}`)
+  if (!user) redirect(`${HUB.login}?app=${encodeURIComponent(appSlug)}`)
+  if (!(await hasAppAccess(appSlug))) redirect(`${HUB.refus}?app=${appSlug}`)
 }
 
 /** URL de déconnexion : un formulaire POST, jamais un `signOut()` côté client. */
-export const signOutUrl = (): string => `${hubUrl()}/auth/signout`
+export const signOutUrl = (): string => HUB.signOut
+
+/** Mémorise l'application ouverte, pour que la racine y renvoie la prochaine fois. */
+export async function touchLastApp(appSlug: string): Promise<void> {
+  const supabase = await createAtcServerClient()
+  await supabase.rpc('touch_last_app', { p_app: appSlug })
+}

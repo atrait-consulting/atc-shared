@@ -1,23 +1,20 @@
 /**
  * Configuration partagée des applications MC.
  *
- * Toutes les applications lisent les mêmes variables : c'est ce qui garantit
- * qu'elles parlent au même annuaire et posent leur cookie sur le même domaine.
- */
-
-/**
- * Ces quatre constantes DOIVENT s'écrire en toutes lettres.
+ * Depuis la bascule sur une origine unique (my.atrait-consulting.com), il n'y
+ * a plus de domaine de cookie à gérer : tout vit sur le même hôte, les
+ * applications sous un chemin. Le cookie de session est donc host-only, ce que
+ * tous les navigateurs acceptent sans réserve — y compris Safari iOS, dont
+ * les restrictions avaient coûté cher sur les projets précédents.
  *
- * Next remplace les `process.env.NEXT_PUBLIC_*` à la compilation, mais
- * uniquement quand l'expression est littérale. Un accès dynamique — un
- * `process.env[name]` avec une variable — ne peut pas être substitué : il
- * fonctionne côté serveur, où `process.env` existe vraiment, et vaut
- * `undefined` dans le navigateur. La panne est déroutante, parce que la moitié
- * serveur du code marche parfaitement pendant que le clic ne fait rien.
+ * Ces constantes DOIVENT s'écrire en toutes lettres : Next remplace les
+ * `process.env.NEXT_PUBLIC_*` à la compilation, mais uniquement quand
+ * l'expression est littérale. Un `process.env[name]` dynamique fonctionne
+ * côté serveur et vaut `undefined` dans le navigateur — panne déroutante,
+ * parce que les pages se rendent pendant que le moindre clic ne fait rien.
  */
 const ID_URL = process.env.NEXT_PUBLIC_ATC_ID_URL
 const ID_ANON_KEY = process.env.NEXT_PUBLIC_ATC_ID_ANON_KEY
-const HUB_URL = process.env.NEXT_PUBLIC_MC_HUB_URL
 
 function required(value: string | undefined, name: string): string {
   if (!value) {
@@ -35,28 +32,18 @@ export const idUrl = (): string => required(ID_URL, 'NEXT_PUBLIC_ATC_ID_URL')
 /** Clé anonyme du projet `atc-platform`. Publique par nature, jamais la service_role. */
 export const idAnonKey = (): string => required(ID_ANON_KEY, 'NEXT_PUBLIC_ATC_ID_ANON_KEY')
 
-/** Le portail, vers lequel on renvoie pour se connecter ou en cas de refus. */
-export const hubUrl = (): string => HUB_URL ?? 'https://mc.atrait-consulting.com'
-
 /**
- * Domaine du cookie de session, résolu pour l'hôte courant.
- *
- * Le cookie n'est partagé que si l'hôte appartient réellement au domaine
- * configuré. Sur `localhost` et sur les URLs de prévisualisation `*.vercel.app`
- * on renvoie `undefined` : le navigateur refuserait un cookie posé sur un
- * domaine suffixe public, et la session resterait invisible — un symptôme
- * qui ressemble à s'y méprendre à un bug d'authentification.
+ * Chemins du portail. Relatifs, et c'est tout l'intérêt : une redirection
+ * relative reste sur l'origine courante, qu'on soit en production, sur une
+ * prévisualisation ou sur localhost. Plus aucune URL à configurer.
  */
-export function cookieDomainFor(host?: string | null): string | undefined {
-  const configured = process.env.NEXT_PUBLIC_ATC_COOKIE_DOMAIN
-  if (!configured) return undefined
-  if (!host) return configured
-
-  const hostname = host.split(':')[0]!.toLowerCase()
-  const base = configured.replace(/^\./, '').toLowerCase()
-
-  return hostname === base || hostname.endsWith(`.${base}`) ? configured : undefined
-}
+export const HUB = {
+  accueil: '/',
+  portail: '/portail',
+  login: '/login',
+  refus: '/acces',
+  signOut: '/auth/signout',
+} as const
 
 /** Nom lisible d'une application, pour les messages destinés à l'utilisateur. */
 export const appLabel = (slug: string): string => `MC ${slug.toUpperCase()}`

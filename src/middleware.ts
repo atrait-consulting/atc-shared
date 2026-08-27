@@ -6,18 +6,21 @@
  *   export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'] }
  *
  * Il fait trois choses, dans cet ordre :
- *   1. rafraîchit le cookie de session (sinon la session expire au bout d'un
- *      quart d'heure alors que l'utilisateur est encore là) ;
+ *   1. rafraîchit le cookie de session ;
  *   2. renvoie vers le portail si personne n'est connecté ;
  *   3. vérifie que la personne a bien le droit d'entrer dans CETTE application.
  *
  * L'étape 3 lit le claim `mc` du jeton — aucun appel à la base. Si le hook JWT
- * n'est pas encore activé côté Supabase, elle bascule automatiquement sur un
- * appel `has_app_access`, plus lent mais toujours juste.
+ * n'est pas activé côté Supabase, elle bascule sur `has_app_access`, plus lent
+ * mais toujours juste.
+ *
+ * Les redirections sont RELATIVES : sur une origine unique, elles restent
+ * naturellement sur l'hôte courant, en production comme sur localhost. Il n'y
+ * a plus une seule URL de portail à configurer.
  */
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { cookieDomainFor, hubUrl, idAnonKey, idUrl } from './config.js'
+import { HUB, idAnonKey, idUrl } from './config.js'
 import { readMcClaims } from './jwt.js'
 
 export interface AtcMiddlewareOptions {
@@ -37,17 +40,15 @@ export function atcMiddleware(appSlug: string, options: AtcMiddlewareOptions = {
     }
 
     let response = NextResponse.next({ request })
-    const domain = cookieDomainFor(request.headers.get('host'))
 
     const supabase = createServerClient(idUrl(), idAnonKey(), {
-      cookieOptions: { domain, path: '/', sameSite: 'lax', secure: true },
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (list) => {
           for (const { name, value } of list) request.cookies.set(name, value)
           response = NextResponse.next({ request })
           for (const { name, value, options: opts } of list) {
-            response.cookies.set(name, value, { ...opts, domain, path: '/' })
+            response.cookies.set(name, value, opts)
           }
         },
       },
@@ -57,7 +58,7 @@ export function atcMiddleware(appSlug: string, options: AtcMiddlewareOptions = {
     // d'identité qu'on accepte. Tout ce qui suit s'appuie dessus.
     const { data: userData } = await supabase.auth.getUser()
     if (!userData.user) {
-      return NextResponse.redirect(loginUrl(request, appSlug))
+      return NextResponse.redirect(new URL(loginPath(request, appSlug), request.url))
     }
 
     const { data: sessionData } = await supabase.auth.getSession()
@@ -72,15 +73,28 @@ export function atcMiddleware(appSlug: string, options: AtcMiddlewareOptions = {
     }
 
     if (!allowed) {
-      return NextResponse.redirect(`${hubUrl()}/acces?app=${encodeURIComponent(appSlug)}`)
+      const refus = `${HUB.refus}?app=${encodeURIComponent(appSlug)}`
+      return NextResponse.redirect(new URL(refus, request.url))
     }
 
     return response
   }
 }
 
-function loginUrl(request: NextRequest, appSlug: string): string {
-  const target = new URL(request.url)
-  const params = new URLSearchParams({ app: appSlug, next: target.pathname + target.search })
-  return `${hubUrl()}/login?${params.toString()}`
+/**
+ * `basePath` retire le préfixe de `pathname` : une application montée sous
+ * /sonar voit « /app.html ». Le portail, lui, vit à la racine de l'origine et
+ * renverrait donc vers « /app.html », qui n'existe pas chez lui. On remet le
+ * préfixe pour que le retour après connexion tombe au bon endroit.
+ */
+function loginPath(request: NextRequest, appSlug: string): string {
+  const path = request.nextUrl.pathname
+  const prefixe = `/${appSlug}`
+  const complet = path === prefixe || path.startsWith(`${prefixe}/`) ? path : prefixe + path
+
+  const params = new URLSearchParams({
+    app: appSlug,
+    next: complet + request.nextUrl.search,
+  })
+  return `${HUB.login}?${params.toString()}`
 }
