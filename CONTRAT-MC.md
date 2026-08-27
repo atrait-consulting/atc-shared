@@ -37,10 +37,20 @@ part.** Si vous en voyez un dans du code, c'est un vestige : supprimez-le.
 
 Deux niveaux de contrôle, toujours les deux :
 
-1. Le **middleware** lit le droit dans le jeton — rapide, sur chaque requête, aucun appel base.
+1. Le **middleware** lit le droit dans le jeton, et **ne fait aucun appel réseau** — voir §8,
+   « un 504 sur des pages qui marchaient hier ». Il aiguille ; il n'autorise pas.
 2. Toute **écriture** et toute donnée sensible rappelle `hasAppAccess()`, qui interroge la base.
    Un jeton reste valide jusqu'à son expiration ; sans ce second niveau, une révocation
    n'aurait aucun effet immédiat.
+
+Le middleware ne vérifie pas la signature du jeton, et n'a pas à le faire : rien n'est servi sur la
+foi de sa lecture. Chaque page revalide la session côté serveur, chaque requête repasse par la RLS
+avec le vrai jeton. Un cookie forgé n'obtient qu'une page qui échoue.
+
+> **Pré-requis, pas réglage.** Le hook `identity.custom_access_token_hook` doit être activé dans
+> Supabase (Authentication → Hooks → *Customize Access Token (JWT) Claims*). Sans lui, le claim
+> `mc` est absent, le middleware n'a plus rien à lire, et les applications renvoient au portail.
+> C'est le seul réglage du tableau de bord dont dépend le fonctionnement de la plateforme.
 
 ---
 
@@ -284,6 +294,26 @@ fusionné une PR ailleurs.
 ## 8 · Les pièges déjà payés
 
 Chacun a coûté du temps une fois. Il n'a pas à en coûter deux.
+
+**Un 504 `MIDDLEWARE_INVOCATION_TIMEOUT` sur des pages qui marchaient hier.** Le middleware Next
+s'exécute dans l'Edge Runtime. Depuis ce runtime, un appel qui atteint réellement le service
+d'authentification Supabase **reste sans réponse** — mesuré quatre fois sur quatre depuis `lhr1`,
+quand le même appel répond en 110 ms depuis un runtime Node, et quand `example.com` répond en
+105 ms depuis l'Edge. Le middleware attend, Vercel le tue, l'utilisateur reçoit un 504 brut.
+
+Le piège est que la cause ne ressemble pas à sa trace : on soupçonne d'abord le hook JWT, la durée
+du jeton, une rafale de rafraîchissements. Un garde-temps sur l'appel supprime bien le 504 — et
+renvoie tout le monde vers l'écran de connexion au bout de quatre secondes. Le symptôme change de
+forme, pas de nature.
+
+*Conséquence, et c'est une règle :* **le middleware ne fait aucun appel réseau.** Il lit le cookie,
+il y lit le claim `mc`, il tranche. Le renouvellement du jeton part vers `/auth/rafraichir`, côté
+portail, en runtime Node — une fois par session au lieu d'une fois par requête.
+
+*Diagnostic, si le doute revient :* déployer deux routes identiques, l'une par défaut, l'autre avec
+`export const runtime = "edge"`, chacune chronométrant `fetch(<ref>.supabase.co/auth/v1/settings)`
+avec `AbortSignal.timeout(3000)`. Les deux colonnes se comparent en une lecture.
+
 
 **« Connexion en cours… » et rien ne se passe.** Les `process.env.NEXT_PUBLIC_*` s'écrivent en
 toutes lettres. Next les remplace à la compilation, mais seulement quand l'expression est
