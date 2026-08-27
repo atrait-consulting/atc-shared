@@ -1,0 +1,32 @@
+{
+  "name": "@atc/auth",
+  "version": "0.1.0",
+  "description": "Authentification et contrôle d'accès partagés des applications MC — ATRAIT Consulting",
+  "private": false,
+  "type": "module",
+  "files": ["dist"],
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./client": { "types": "./dist/client.d.ts", "default": "./dist/client.js" },
+    "./server": { "types": "./dist/server.d.ts", "default": "./dist/server.js" },
+    "./middleware": { "types": "./dist/middleware.d.ts", "default": "./dist/middleware.js" },
+    "./tokens": { "types": "./dist/tokens.d.ts", "default": "./dist/tokens.js" }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.58.0"
+  },
+  "peerDependencies": {
+    "next": ">=15"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "next": "^15.5.0",
+    "typescript": "^5.9.0"
+  }
+}
