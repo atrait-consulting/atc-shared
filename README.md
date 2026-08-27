@@ -73,6 +73,27 @@ Ne jamais `throw` dans une Server Action : retourner `{ ok: false, message }`.
 | `@atc/auth/middleware` | `atcMiddleware(slug, { publicPaths })` |
 | `@atc/auth/tokens` | la charte seule, sans dépendance Supabase |
 
+## Le piège des variables d'environnement
+
+Dans ce paquet, les `process.env.NEXT_PUBLIC_*` s'écrivent **en toutes lettres**, jamais via une
+variable :
+
+```ts
+const ID_URL = process.env.NEXT_PUBLIC_ATC_ID_URL   // ✅ substitué à la compilation
+const v = process.env[name]                          // ❌ undefined dans le navigateur
+```
+
+Next remplace ces expressions à la compilation, mais seulement quand elles sont littérales. Un accès
+dynamique fonctionne côté serveur — où `process.env` existe vraiment — et vaut `undefined` côté
+client. La panne est déroutante : les pages se rendent parfaitement pendant que le moindre clic ne
+fait rien, sans message. Vérification rapide :
+
+```bash
+curl -s localhost:3210/_next/static/chunks/app/login/page.js | grep -c "<votre-ref>.supabase.co"
+```
+
+Zéro signifie que rien n'a été inliné.
+
 ## Deux pièges déjà payés (Novasphere)
 
 1. **La session se pose par en-tête HTTP `Set-Cookie`, jamais par `document.cookie`.**

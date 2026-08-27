@@ -5,8 +5,21 @@
  * qu'elles parlent au même annuaire et posent leur cookie sur le même domaine.
  */
 
-function required(name: string): string {
-  const value = process.env[name]
+/**
+ * Ces quatre constantes DOIVENT s'écrire en toutes lettres.
+ *
+ * Next remplace les `process.env.NEXT_PUBLIC_*` à la compilation, mais
+ * uniquement quand l'expression est littérale. Un accès dynamique — un
+ * `process.env[name]` avec une variable — ne peut pas être substitué : il
+ * fonctionne côté serveur, où `process.env` existe vraiment, et vaut
+ * `undefined` dans le navigateur. La panne est déroutante, parce que la moitié
+ * serveur du code marche parfaitement pendant que le clic ne fait rien.
+ */
+const ID_URL = process.env.NEXT_PUBLIC_ATC_ID_URL
+const ID_ANON_KEY = process.env.NEXT_PUBLIC_ATC_ID_ANON_KEY
+const HUB_URL = process.env.NEXT_PUBLIC_MC_HUB_URL
+
+function required(value: string | undefined, name: string): string {
   if (!value) {
     throw new Error(
       `Variable d'environnement manquante : ${name}. ` +
@@ -17,14 +30,13 @@ function required(name: string): string {
 }
 
 /** URL du projet Supabase `atc-platform`. */
-export const idUrl = (): string => required('NEXT_PUBLIC_ATC_ID_URL')
+export const idUrl = (): string => required(ID_URL, 'NEXT_PUBLIC_ATC_ID_URL')
 
 /** Clé anonyme du projet `atc-platform`. Publique par nature, jamais la service_role. */
-export const idAnonKey = (): string => required('NEXT_PUBLIC_ATC_ID_ANON_KEY')
+export const idAnonKey = (): string => required(ID_ANON_KEY, 'NEXT_PUBLIC_ATC_ID_ANON_KEY')
 
 /** Le portail, vers lequel on renvoie pour se connecter ou en cas de refus. */
-export const hubUrl = (): string =>
-  process.env.NEXT_PUBLIC_MC_HUB_URL ?? 'https://mc.atrait-consulting.com'
+export const hubUrl = (): string => HUB_URL ?? 'https://mc.atrait-consulting.com'
 
 /**
  * Domaine du cookie de session, résolu pour l'hôte courant.
