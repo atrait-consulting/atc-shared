@@ -117,3 +117,18 @@ import { signOutUrl } from '@atc/auth/server'
 
 Un POST vers le portail, pas un `signOut()` côté client — sinon la session survit sur les autres
 sous-domaines.
+
+## Pourquoi `dist/` est versionné
+
+Parce que ce paquet s'installe depuis une archive GitHub, pas depuis un registre npm.
+
+Une dépendance GitHub classique (`github:org/repo#tag`) est normalisée par npm en `git+ssh://`
+dans le lockfile. Sur un poste de développeur, qui a une clé SSH, cela fonctionne. Sur une
+machine de build — Vercel, une action GitHub, n'importe quelle intégration continue — il n'y a
+aucune clé : le clone échoue avant même le début du build, et le message ne dit pas pourquoi.
+
+En publiant l'archive du tag et en y incluant `dist/`, l'installation se réduit à un
+téléchargement HTTPS. Ni git, ni SSH, ni étape de compilation chez le consommateur.
+
+**Conséquence** : après toute modification de `src/`, il faut `npm run build`, committer le
+`dist/` régénéré, puis poser un nouveau tag. Les applications consomment un tag, jamais `main`.
