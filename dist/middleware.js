@@ -1,9 +1,9 @@
 /**
  * Le middleware que chaque application MC monte tel quel.
  *
- *   import { atcMiddleware } from '@atc/auth/middleware'
+ *   import { atcMiddleware, ATC_MATCHER } from '@atc/auth/middleware'
  *   export default atcMiddleware('sonar')
- *   export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'] }
+ *   export const config = { matcher: ATC_MATCHER }
  *
  * Il fait trois choses, dans cet ordre :
  *   1. rafraîchit le cookie de session ;
@@ -23,6 +23,18 @@ import { NextResponse } from 'next/server';
 import { HUB, idAnonKey, idUrl } from './config.js';
 import { readMcClaims } from './jwt.js';
 const alwaysPublic = ['/api/health'];
+/**
+ * Le matcher à monter dans chaque application. À utiliser tel quel.
+ *
+ * L'entrée `'/'` explicite est indispensable : sous un `basePath`, la racine de
+ * l'application n'était pas capturée par le motif d'exclusion, et la page
+ * d'accueil se servait donc sans session. Constaté en production sur MC CRM,
+ * dont le tableau de bord répondait 200 à un inconnu.
+ */
+export const ATC_MATCHER = [
+    '/',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+];
 export function atcMiddleware(appSlug, options = {}) {
     const publicPaths = [...alwaysPublic, ...(options.publicPaths ?? [])];
     return async function middleware(request) {
