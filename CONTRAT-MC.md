@@ -128,7 +128,7 @@ Les trois en gras font échouer la revue sans discussion.
 | R07 | Quatre rôles pour toute la plateforme : `owner`, `admin`, `editor`, `viewer`. Une application peut en ignorer un, jamais en inventer un cinquième. |
 | R08 | Chaque solution a son schéma PostgreSQL. Jamais de table métier dans `public`. |
 | R09 | Aucune application ne crée de table d'utilisateurs. On stocke un `user_id uuid` et on résout le profil via `/api/moi`. |
-| R10 | Les identifiants sont des **UUID**. Les colonnes sont typées `uuid` : un identifiant maison est refusé à l'écriture. |
+| R10 | Les identifiants sont des **UUID**. Les colonnes sont typées `uuid` : un identifiant maison est refusé à l'écriture. *Une seule dérogation à ce jour, le schéma `cctp` : la règle existe parce que MC CRM fabrique ses identifiants dans le navigateur, où seul un UUID évite les collisions. Là où tout est créé par la base, le compteur suffit — mais cela s'écrit, sinon c'est lu comme un oubli.* |
 | R11 | Les écritures groupées suivent l'ordre des dépendances, les suppressions l'ordre inverse. |
 | R12 | Toute migration passe par une PR sur `atc-db`. Aucun `supabase db push` depuis un dépôt applicatif, aucun DDL à la main dans le tableau de bord. |
 | **R13** | **Aucun secret en `NEXT_PUBLIC_*`, aucun `.env` versionné.** La clé `service_role` ne quitte jamais le serveur et ne s'importe jamais depuis un composant `"use client"`. |
