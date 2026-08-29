@@ -1,0 +1,144 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   La charte MC — source unique
+   ═══════════════════════════════════════════════════════════════════════════
+   Ce fichier est LA référence. Les quatre applications en portent une copie,
+   posée entre deux marqueurs par `npm run theme` ; toute divergence apparaît
+   donc en clair dans un `git diff`, au lieu de s'installer en silence.
+
+   Pourquoi une copie plutôt qu'un import : trois des quatre écrans sont des
+   pages HTML statiques servies depuis `public/`, sans étape de compilation
+   CSS. Un import depuis `node_modules` y demanderait une machinerie de build
+   dont le seul mode de panne — la copie qui échoue — laisserait une
+   application entièrement sans style. La copie, elle, ne peut pas échouer à
+   l'exécution.
+
+   ── Deux vocabulaires, un seul jeu de valeurs ─────────────────────────────
+   Le portail nomme ses couleurs par leur ROLE (`--accent`, `--encre`) ; MC CCTP
+   et myCatalogue les nomment par leur TEINTE (`--blue`, `--navy`). Les deux
+   restent valides : les seconds sont des alias des premiers, en bas de ce
+   fichier. Renommer sept cents déclarations d'un même geste, c'est prendre le
+   risque d'en casser une sans le voir — alors que faire converger les VALEURS
+   suffit à faire disparaître l'écart visible.
+
+   ── Le mode sombre n'est pas ici ──────────────────────────────────────────
+   Seul le portail le gère, et il le garde chez lui. Les pages héritées d'ATRAIT
+   AO portent des centaines de gris écrits en dur (`#fff`, `#333`) qui ne
+   suivraient pas : un mode sombre imposé les rendrait illisibles.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ==ATC-THEME:DÉBUT== */
+:root {
+  /* ── La marque ATRAIT 2026 ─────────────────────────────────────────────
+     Trois couleurs, et rien d'autre. L'orange est un signal, pas une
+     décoration : il ne sert qu'à ce qui demande une attention. */
+  --atc-bleu:   #0285C8;
+  --atc-marine: #0E2841;
+  --atc-orange: #E97132;
+
+  /* ── L'accent, et ses déclinaisons ─────────────────────────────────────
+     Une seule couleur vive par écran, celle de l'action principale. */
+  --accent:       var(--atc-bleu);
+  --accent-fort:  #026DA2;   /* survol, texte sur fond clair */
+  --accent-lavis: #EAF5FC;   /* fond d'une zone accentuée */
+  --accent-pale:  #E3F2FD;   /* survol de ligne, pastille */
+  --accent-halo:  rgba(2, 133, 200, .25);   /* anneau de focus */
+
+  --marine-lavis: #EAF0F7;
+  --orange-lavis: #FFF3EC;
+  --orange-fort:  #C25A1E;
+
+  /* ── Les surfaces et l'encre ───────────────────────────────────────────
+     Les gris tirent légèrement vers le bleu de la marque : un gris neutre
+     pur, à côté d'un accent froid, se lit comme sale. */
+  --fond:          #F7F8FA;
+  --surface:       #FFFFFF;
+  --surface-creux: #F2F5F8;
+  --bord:          #E7E9EC;
+  --bord-fort:     #CFD8E3;
+
+  --encre:       #16181D;
+  --encre-douce: #6B7280;
+  --encre-pale:  #9CA3AF;
+
+  /* ── Les signaux ───────────────────────────────────────────────────────
+     Distincts de l'accent : un état ne doit pas se confondre avec une
+     action. Un vert d'accent et un vert de succès dans le même écran, et
+     l'on clique sur ce qui n'était qu'une information. */
+  --ok:          #5DA824;  --ok-lavis:        #F1FAE7;  --ok-fort:        #3F7418;
+  --attention:   #B7791F;  --attention-lavis: #FBF3E4;
+  --stop:        #DC2626;  --stop-lavis:      #FDEEEE;  --stop-bord:      #F2C4C4;
+
+  /* ── La colonne de navigation ──────────────────────────────────────────
+     Presque noire, et non marine : à côté d'un contenu blanc, un marine
+     saturé tire l'œil vers la navigation plutôt que vers le travail. */
+  --barre:            #12141A;
+  --barre-survol:     #1B1E26;
+  --barre-actif:      #1C2836;
+  --barre-encre:      #A6ACBA;
+  --barre-encre-vive: #D5D9E0;
+  --barre-encre-pale: #6E7480;
+
+  /* ── L'espacement ──────────────────────────────────────────────────────
+     4 · 8 · 12 · 16 · 24 · 32, et rien d'autre. Ce n'est pas une question
+     d'esthétique : une interface dont les écarts ne se répètent pas se lit
+     plus lentement, parce que l'œil ne peut se fier à rien. */
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e5: 24px; --e6: 32px;
+
+  /* ── La typographie ────────────────────────────────────────────────────
+     Six tailles, chacune avec un emploi :
+       11    étiquettes, en-têtes de colonne, méta
+       12.5  corps dense : tableaux, listes
+       13.5  corps courant
+       15    titre de section
+       18    titre de page
+       26    le chiffre qu'on vient lire */
+  --t1: 11px; --t2: 12.5px; --t3: 13.5px; --t4: 15px; --t5: 18px; --t6: 26px;
+
+  --police: 'Lato', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --police-chiffre: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
+
+  /* ── Les rayons ────────────────────────────────────────────────────────
+     Trois, selon la taille de ce qu'ils entourent. Un quatrième et l'on ne
+     sait plus lequel choisir. */
+  --rayon-sm: 6px; --rayon-md: 10px; --rayon-lg: 16px; --rayon-pilule: 999px;
+
+  --ombre-carte:    0 1px 2px rgba(16, 24, 40, .04);
+  --ombre-flottant: 0 20px 48px rgba(16, 24, 40, .22);
+
+  /* ═══ Alias hérités ═══════════════════════════════════════════════════
+     Les noms employés par les écrans existants. Ils pointent sur les mêmes
+     valeurs : c'est ce qui fait disparaître l'écart sans toucher aux sept
+     cents déclarations qui s'en servent. À résorber écran par écran. */
+
+  /* MC CCTP et myCatalogue */
+  --blue: var(--accent);        --navy: var(--atc-marine);    --orange: var(--atc-orange);
+  --blue-light: var(--accent-pale);
+  --navy-light: var(--marine-lavis);
+  --orange-light: var(--orange-lavis);
+  --blue-soft: var(--accent-lavis);
+  --blue-ring: var(--accent-halo);
+  --green2: var(--ok);          --green-soft: var(--ok-lavis);
+  --amber2: var(--attention);   --amber-soft: var(--attention-lavis);
+  --red2: var(--stop);          --red-soft: var(--stop-lavis);
+  --sidebar: var(--barre);      --sidebar-hover: var(--barre-survol);
+  --bg2: var(--fond);           --surface-2: var(--surface-creux);
+  --border: var(--bord);
+  --ink: var(--encre);          --muted: var(--encre-douce);  --faint: var(--encre-pale);
+  --radius-sm: var(--rayon-sm); --radius-md: var(--rayon-md); --radius-lg: var(--rayon-lg);
+  --shadow2: var(--ombre-carte);
+  --mono: var(--police-chiffre);
+
+  /* Le portail */
+  --ground: var(--fond);
+  --surface-sunken: var(--surface-creux);
+  --border-strong: var(--bord-fort);
+  --ink-soft: var(--encre-douce);
+  --ink-faint: var(--encre-pale);
+  --accent-hover: var(--accent-fort);
+  --accent-ink: var(--accent-fort);
+  --accent-wash: var(--accent-lavis);
+  --warn: var(--attention);
+  --stop-wash: var(--stop-lavis);
+  --shadow-card: var(--ombre-carte);
+}
+/* ==ATC-THEME:FIN== */
