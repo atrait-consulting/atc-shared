@@ -36,7 +36,9 @@
     "prepare": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "theme": "node theme/appliquer.mjs",
-    "theme:apps": "node theme/appliquer.mjs ../mc-cctp/public/app.html ../mc-catalogue/public/app.html ../mc-hub/src/app/globals.css ../mc-sonar/public/app.html"
+    "theme:apps": "node theme/appliquer.mjs ../mc-cctp/public/app.html ../mc-catalogue/public/app.html ../mc-hub/src/app/globals.css ../mc-sonar/public/app.html",
+    "aligner": "node theme/aligner.mjs",
+    "aligner:apps": "node theme/aligner.mjs ../mc-cctp/public/app.html ../mc-catalogue/public/app.html ../mc-sonar/public/app.html ../mc-hub/src/app/globals.css ../mc-crm/src/app/globals.css"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

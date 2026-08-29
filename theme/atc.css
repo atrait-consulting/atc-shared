@@ -79,19 +79,29 @@
   --barre-encre-pale: #6E7480;
 
   /* ── L'espacement ──────────────────────────────────────────────────────
-     4 · 8 · 12 · 16 · 24 · 32, et rien d'autre. Ce n'est pas une question
-     d'esthétique : une interface dont les écarts ne se répètent pas se lit
-     plus lentement, parce que l'œil ne peut se fier à rien. */
+     4 · 8 · 12 · 16 · 24 · 32. Ce n'est pas une question d'esthétique : une
+     interface dont les écarts ne se répètent pas se lit plus lentement, parce
+     que l'œil ne peut se fier à rien. */
   --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e5: 24px; --e6: 32px;
 
+  /* Et trois crans denses — 2 · 6 · 10 — pour les panneaux de contrôle.
+     MC SONAR aligne des dizaines de champs dans 320 px de large : lui imposer
+     un pas de 4 px déborderait ses colonnes. La règle n'est pas « six valeurs »,
+     c'est « des écarts qui se répètent » ; un pas de 2 px jusqu'à 12, puis de
+     4 px, se répète tout autant. Ces crans ne servent QUE là où la densité est
+     le sujet — une carte, une page, un formulaire de saisie prennent l'échelle
+     ordinaire. */
+  --ed1: 2px; --ed2: 6px; --ed3: 10px;
+
   /* ── La typographie ────────────────────────────────────────────────────
-     Six tailles, chacune avec un emploi :
+       10    valeur d'un panneau de contrôle — voir --ed*, même raison
        11    étiquettes, en-têtes de colonne, méta
        12.5  corps dense : tableaux, listes
        13.5  corps courant
        15    titre de section
        18    titre de page
        26    le chiffre qu'on vient lire */
+  --t0: 10px;
   --t1: 11px; --t2: 12.5px; --t3: 13.5px; --t4: 15px; --t5: 18px; --t6: 26px;
 
   --police: 'Lato', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
