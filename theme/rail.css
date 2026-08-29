@@ -28,19 +28,27 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ==ATC-RAIL:DÉBUT== */
+:root {
+  /* Ce ne sont pas des écarts mais la TAILLE de la colonne, et le décalage que
+     le contenu doit lui laisser. Les deux doivent être égaux : nommés, ils ne
+     peuvent plus diverger d'un pixel sans qu'on le voie. */
+  --rail-large: 58px;
+  --rail-haut:  66px;
+}
+
 .rail {
-  position: fixed; top: 0; left: 0; bottom: 0; width: 58px; z-index: 50;
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--rail-large); z-index: 50;
   display: flex; flex-direction: column; align-items: center; gap: var(--e1);
-  padding: 10px 0;
+  padding: var(--ed3) 0;
   background: var(--surface); border-right: 1px solid var(--bord);
 }
 
 /* Le contenu se décale plutôt que de passer dessous. */
-.has-rail { padding-left: 58px; }
+.has-rail { padding-left: var(--rail-large); }
 
 .rail-btn {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; width: 46px; padding: 7px 0 6px;
+  gap: var(--ed1); width: 46px; padding: var(--ed2) 0;
   border: none; background: none;
   border-radius: var(--rayon-md);
   color: var(--encre-douce); text-decoration: none; cursor: pointer;
@@ -55,22 +63,22 @@
 .rail-icone { width: 17px; height: 17px; display: block; }
 
 .rail-label {
-  font-size: 9.5px; letter-spacing: .02em; max-width: 44px;
+  font-size: var(--t0); letter-spacing: .02em; max-width: 44px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-.rail-sep { width: 24px; height: 1px; margin: 6px 0; background: var(--bord); flex-shrink: 0; }
+.rail-sep { width: 24px; height: 1px; margin: var(--ed2) 0; background: var(--bord); flex-shrink: 0; }
 
 @media (max-width: 900px) {
   .rail {
     top: auto; right: 0; width: auto;
     flex-direction: row; justify-content: center; gap: var(--e2);
-    padding: 6px 0 max(6px, env(safe-area-inset-bottom, 0px));
+    padding: var(--ed2) 0 max(var(--ed2), env(safe-area-inset-bottom, 0px));
     border-right: none; border-top: 1px solid var(--bord);
     overflow-x: auto;
   }
-  .has-rail { padding-left: 0; padding-bottom: 66px; }
+  .has-rail { padding-left: 0; padding-bottom: var(--rail-haut); }
   .rail-btn { flex-shrink: 0; min-height: 40px; }
-  .rail-sep { width: 1px; height: 24px; margin: 0 2px; }
+  .rail-sep { width: 1px; height: 24px; margin: 0 var(--ed1); }
 }
 /* ==ATC-RAIL:FIN== */
