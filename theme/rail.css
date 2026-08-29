@@ -1,0 +1,76 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   La colonne de navigation de la plateforme
+   ═══════════════════════════════════════════════════════════════════════════
+   Le fil qui ramène toujours au portail, et qui fait passer d'un outil à
+   l'autre sans repasser par lui. Elle est la contrepartie indispensable de la
+   racine qui renvoie vers la dernière application ouverte — sans elle, on
+   entrerait dans un outil sans pouvoir en ressortir autrement qu'en tapant une
+   adresse.
+
+   Les cinq applications en portent la même : mêmes classes, mêmes valeurs,
+   même endroit. Elle vient de ce fichier, posé par `npm run theme:apps` ;
+   l'éditer dans une application est un travail perdu.
+
+   ── La règle de position ──────────────────────────────────────────────────
+   Sur un écran large, elle est à gauche, sur 58 px. Sur un écran étroit, elle
+   se couche en barre basse — 58 px de large sur 375, c'est un sixième de
+   l'écran pris à l'outil lui-même.
+
+   Et alors une règle simple sépare les deux navigations : **le bas appartient
+   à la plateforme, le haut appartient à l'application**. Deux barres basses
+   empilées mangeraient cent dix pixels sur huit cents, et l'on ne saurait plus
+   laquelle répond à quoi. Chaque application couche donc sa propre navigation
+   en bandeau horizontal sous son en-tête.
+
+   Les applications sans droit n'y figurent pas : une barre qui propose des
+   portes fermées se transforme vite en source d'agacement. Le portail, lui,
+   les montre — c'est là qu'on demande un accès.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ==ATC-RAIL:DÉBUT== */
+.rail {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 58px; z-index: 50;
+  display: flex; flex-direction: column; align-items: center; gap: var(--e1);
+  padding: 10px 0;
+  background: var(--surface); border-right: 1px solid var(--bord);
+}
+
+/* Le contenu se décale plutôt que de passer dessous. */
+.has-rail { padding-left: 58px; }
+
+.rail-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; width: 46px; padding: 7px 0 6px;
+  border: none; background: none;
+  border-radius: var(--rayon-md);
+  color: var(--encre-douce); text-decoration: none; cursor: pointer;
+  font-family: var(--police);
+  transition: background 120ms ease, color 120ms ease;
+}
+.rail-btn:hover { background: var(--surface-creux); color: var(--encre); text-decoration: none; }
+.rail-btn.is-current { background: var(--accent-lavis); color: var(--accent-fort); }
+.rail-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.rail-mark { font-size: var(--t2); font-weight: 600; letter-spacing: .02em; line-height: 17px; }
+.rail-icone { width: 17px; height: 17px; display: block; }
+
+.rail-label {
+  font-size: 9.5px; letter-spacing: .02em; max-width: 44px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.rail-sep { width: 24px; height: 1px; margin: 6px 0; background: var(--bord); flex-shrink: 0; }
+
+@media (max-width: 900px) {
+  .rail {
+    top: auto; right: 0; width: auto;
+    flex-direction: row; justify-content: center; gap: var(--e2);
+    padding: 6px 0 max(6px, env(safe-area-inset-bottom, 0px));
+    border-right: none; border-top: 1px solid var(--bord);
+    overflow-x: auto;
+  }
+  .has-rail { padding-left: 0; padding-bottom: 66px; }
+  .rail-btn { flex-shrink: 0; min-height: 40px; }
+  .rail-sep { width: 1px; height: 24px; margin: 0 2px; }
+}
+/* ==ATC-RAIL:FIN== */

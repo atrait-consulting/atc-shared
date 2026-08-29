@@ -1,33 +1,46 @@
 #!/usr/bin/env node
 /**
- * Pose la charte MC dans un fichier, entre ses deux marqueurs.
+ * Pose les pièces communes de la charte dans un fichier, entre leurs marqueurs.
  *
  * Usage : node appliquer.mjs <fichier> [<fichier>…]
  *
- * Chaque application appelle ce script sur ses feuilles de style par
- * `npm run theme`. Le bloc est REMPLACÉ, jamais fusionné : une charte qu'on
- * fusionne est une charte qui garde les vieilles valeurs à côté des neuves.
+ * Deux pièces à ce jour :
+ *   ATC-THEME  — les jetons (atc.css)
+ *   ATC-RAIL   — la colonne de navigation (rail.css)
  *
- * Si les marqueurs manquent, le script le dit et ne touche à rien. Il vaut
- * mieux un message que l'insertion d'un bloc au mauvais endroit — dans une
- * page de cinq mille lignes, on ne s'en apercevrait pas avant l'écran.
+ * Un fichier ne reçoit que les pièces dont il porte les marqueurs : le portail
+ * a sa propre colonne rendue par React et n'a donc pas besoin de la seconde.
+ *
+ * Le bloc est REMPLACÉ, jamais fusionné : une charte qu'on fusionne est une
+ * charte qui garde les vieilles valeurs à côté des neuves. Et si les marqueurs
+ * manquent, le script le dit sans rien toucher — mieux vaut un message qu'une
+ * insertion au mauvais endroit dans une page de cinq mille lignes.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
-const DEBUT = '/* ==ATC-THEME:DÉBUT== */';
-const FIN = '/* ==ATC-THEME:FIN== */';
 
-const source = readFileSync(resolve(ICI, 'atc.css'), 'utf8');
-const d = source.indexOf(DEBUT);
-const f = source.indexOf(FIN);
-if (d < 0 || f < 0) {
-  console.error('atc.css a perdu ses marqueurs.');
-  process.exit(1);
+const PIECES = [
+  { nom: 'ATC-THEME', source: 'atc.css' },
+  { nom: 'ATC-RAIL', source: 'rail.css' },
+];
+
+function extraire(piece) {
+  const debut = `/* ==${piece.nom}:DÉBUT== */`;
+  const fin = `/* ==${piece.nom}:FIN== */`;
+  const texte = readFileSync(resolve(ICI, piece.source), 'utf8');
+  const a = texte.indexOf(debut);
+  const b = texte.indexOf(fin);
+  if (a < 0 || b < 0) {
+    console.error(`${piece.source} a perdu ses marqueurs ${piece.nom}.`);
+    process.exit(1);
+  }
+  return { debut, fin, bloc: texte.slice(a, b + fin.length) };
 }
-const bloc = source.slice(d, f + FIN.length);
+
+const blocs = PIECES.map((p) => ({ ...p, ...extraire(p) }));
 
 const cibles = process.argv.slice(2);
 if (!cibles.length) {
@@ -37,21 +50,30 @@ if (!cibles.length) {
 
 let change = 0;
 for (const chemin of cibles) {
-  const texte = readFileSync(chemin, 'utf8');
-  const a = texte.indexOf(DEBUT);
-  const b = texte.indexOf(FIN);
-  if (a < 0 || b < 0) {
-    console.error(`✗ ${chemin} — marqueurs ATC-THEME absents, fichier laissé tel quel.`);
+  let texte = readFileSync(chemin, 'utf8');
+  const avant = texte;
+  const posees = [];
+  let manquantes = 0;
+
+  for (const p of blocs) {
+    const a = texte.indexOf(p.debut);
+    const b = texte.indexOf(p.fin);
+    if (a < 0 || b < 0) { manquantes++; continue; }
+    texte = texte.slice(0, a) + p.bloc + texte.slice(b + p.fin.length);
+    posees.push(p.nom);
+  }
+
+  if (!posees.length) {
+    console.error(`✗ ${chemin} — aucun marqueur reconnu, fichier laissé tel quel.`);
     process.exitCode = 1;
     continue;
   }
-  const neuf = texte.slice(0, a) + bloc + texte.slice(b + FIN.length);
-  if (neuf === texte) {
-    console.log(`· ${chemin} — déjà à jour`);
+  if (texte === avant) {
+    console.log(`· ${chemin} — déjà à jour (${posees.join(', ')})`);
     continue;
   }
-  writeFileSync(chemin, neuf);
-  console.log(`✓ ${chemin} — charte posée`);
+  writeFileSync(chemin, texte);
+  console.log(`✓ ${chemin} — ${posees.join(', ')}`);
   change++;
 }
 if (change) console.log(`\n${change} fichier(s) mis à jour. Relisez le diff avant de livrer.`);
