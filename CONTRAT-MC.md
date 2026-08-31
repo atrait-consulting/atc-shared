@@ -503,7 +503,7 @@ dans le portail entier.
 
 **5 · Vercel, relié à GitHub tout de suite** (R14). C'est l'étape la plus rentable et la plus
 souvent remise à plus tard : cinq projets sur six ne le sont pas, et un `git push` y réussit sans
-rien déployer. Puis les deux variables du §5, en `--type config`.
+rien déployer. Puis les deux variables du §5 (voir §9 pour la commande).
 
 **6 · Le relais.** Ajouter `<slug>=https://mc-<slug>.vercel.app` à `ATC_APP_ORIGINS` sur `mc-hub`,
 **et redéployer `mc-hub`** — la variable est lue à la compilation. Sans ce redéploiement,
@@ -541,14 +541,21 @@ chez moi » de « c'est livré ».
 Branche `feat/…` ou `fix/…` → demande de fusion → une relecture → fusion sur `main` → Vercel
 déploie.
 
-Variables sur Vercel — utiliser `--type config` pour tout ce qui n'est pas secret :
+Variables sur Vercel — **le défaut est le bon** pour tout ce qui n'est pas secret :
 
 ```bash
-echo "https://<ref>.supabase.co" | vercel env add NEXT_PUBLIC_ATC_ID_URL production --type config
+vercel env add NEXT_PUBLIC_ATC_ID_URL production
+vercel env add CRM_CLE_CONNECTEURS production --sensitive   # un vrai secret
 ```
 
-Sans ce drapeau, la valeur est stockée en *Secret* et devient **impossible à relire**, y compris
-pour vous : impossible de vérifier une clé mal collée.
+Une variable ordinaire se relit ; une variable `--sensitive` ne se relit **jamais**, pas même par
+vous. C'est ce qu'on veut d'une clé, et c'est ce qu'on ne veut pas d'une URL : impossible sinon de
+vérifier une valeur mal collée.
+
+> **`--type config` n'existe plus.** Le drapeau figurait ici et la CLI le refuse désormais
+> (`unknown or unexpected option`, constaté sur la 50.39.0). Le comportement qu'il demandait est
+> devenu le comportement par défaut ; c'est `--sensitive` qui fait l'inverse. Une instruction
+> périmée dans un document qui « fait foi » coûte plus cher qu'une instruction absente.
 
 Épingler la dépendance partagée sur un **tag**, jamais sur `main` :
 
