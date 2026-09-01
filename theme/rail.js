@@ -46,8 +46,8 @@
   nav.className = 'rail';
   nav.setAttribute('aria-label', 'Navigation de la plateforme');
   nav.innerHTML =
-    '<a class="rail-btn rail-home" href="/portail" title="Portail — toutes vos applications">' +
-    MAISON + '<span class="rail-label">Portail</span></a>';
+    '<a class="rail-btn rail-home" href="/portail" title="myATC — toutes vos applications">' +
+    MAISON + '<span class="rail-label">myATC</span></a>';
   document.body.insertBefore(nav, document.body.firstChild);
   if (cible) cible.classList.add('has-rail');
 
