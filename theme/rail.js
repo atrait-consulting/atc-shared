@@ -14,7 +14,8 @@
    Usage — une seule ligne dans la page, avant la fermeture du corps :
        <script src="rail.js" data-app="cctp"></script>
    Le script pose lui-même le `<nav class="rail">` en tête du corps et ajoute
-   `has-rail` à l'élément qu'on lui désigne par `data-decaler` (`body` à défaut).
+   `has-rail` à l'élément qu'on lui désigne par `data-decaler` (`body` à défaut),
+   puis la version de l'outil en pied (`api/version`).
    ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -73,4 +74,27 @@
       });
     })
     .catch(function () { /* silence : on ne bloque pas l'outil pour une colonne */ });
+
+  /* La version de l'outil, en pied de colonne : `api/version`, même origine,
+     même règle de silence. Le lien mène à la page Versions du portail. */
+  fetch('api/version', { credentials: 'same-origin' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (v) {
+      if (!v || !v.version) return;
+      var quand = v.construit ? new Date(v.construit) : null;
+      var jour = quand && !isNaN(quand) ? quand.toLocaleDateString('fr-FR',
+        { day: '2-digit', month: '2-digit', timeZone: 'Europe/Paris' }) : '';
+      var a = document.createElement('a');
+      a.className = 'rail-version';
+      a.href = '/versions';
+      a.innerHTML = 'v' + echapper(v.version) + (jour ? '<br>' + echapper(jour) : '');
+      a.title = [
+        'Version ' + v.version + (v.commit ? ' · ' + v.commit : ''),
+        quand && !isNaN(quand) ? 'Construite le ' + quand.toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }) : '',
+        v.contenu || '',
+        'Toutes les versions : cliquer',
+      ].filter(Boolean).join('\n');
+      nav.appendChild(a);
+    })
+    .catch(function () { /* silence */ });
 })();

@@ -83,6 +83,20 @@
 
 .rail-sep { width: 24px; height: 1px; margin: var(--ed2) 0; background: rgba(255, 255, 255, .10); flex-shrink: 0; }
 
+/* La version de l'outil ouvert, en pied de colonne (api/version). Un lien vers
+   la page Versions du portail, qui les montre toutes. Rien sur mobile : la
+   colonne y devient une barre, et la place y manque. */
+.rail-version {
+  order: 99; margin-top: auto; padding: var(--e1) 2px 0; max-width: 100%;
+  font-size: 9.5px; line-height: 1.3; letter-spacing: .02em; text-align: center;
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+  color: var(--barre-encre); opacity: .7; text-decoration: none;
+}
+.rail-version:hover { opacity: 1; color: var(--barre-encre-vive); text-decoration: none; }
+.rail-version:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; opacity: 1; }
+@media (max-width: 900px) { .rail-version { display: none; } }
+
+
 @media (max-width: 900px) {
   .rail {
     top: auto; right: 0; width: auto;
