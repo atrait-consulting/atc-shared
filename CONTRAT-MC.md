@@ -5,8 +5,8 @@
 À lire avant d'écrire la première ligne d'une application MC. Ce document est la référence :
 si un autre écrit dit le contraire, c'est celui-ci qui fait foi.
 
-*État au 30/08/2026 — six applications en service. La recette pour en ajouter une est au §8, la
-donnée que toutes partagent au §7.*
+*État au 21/09/2026 — sept applications (cinq en service, NOPTIK et myProjet en bêta). La recette
+pour en ajouter une est au §8, la donnée que toutes partagent au §7, la mise en ligne au §9.*
 
 ---
 
@@ -43,7 +43,7 @@ navigateur ──▶  my.atrait-consulting.com  ──── rewrites ───�
 | `catalogue` | **myCatalogue** | le catalogue d'articles, **commun à tous** — voir §7 | `catalogue` |
 | `parapheur` | **MC PARAPHEUR** | tamponner un PDF et pouvoir le prouver | `parapheur` |
 
-La septième s'ajoute sans rien toucher aux six autres : la recette est au §8.
+La suivante s'ajoute sans rien toucher aux autres : la recette est au §8.
 
 Ce choix d'une origine unique n'est pas cosmétique : il supprime tout partage de cookie entre
 hôtes, et avec lui la famille de pannes qui va avec — session invisible sur iPhone, cookie en
@@ -71,8 +71,9 @@ avec le vrai jeton. Un cookie forgé n'obtient qu'une page qui échoue.
 
 ## 2 · Ajouter un collaborateur
 
-Il n'y a **aucune invitation à envoyer**. Avec le SSO Microsoft, quelqu'un existe dans la
-plateforme dès sa première connexion, et pas avant.
+Il n'y a **aucune invitation à envoyer** pour l'accès aux applications. Avec le SSO Microsoft,
+quelqu'un existe dans la plateforme dès sa première connexion, et pas avant. (Pour **contribuer au
+code** d'une application, c'est autre chose : une invitation GitHub sur son dépôt, voir §9.)
 
 **1.** Côté Microsoft, si *Assignment required* est activé sur l'application MC Hub, l'ajouter
 dans **Entra ID → Enterprise applications → MC Hub → Users and groups**.
@@ -151,7 +152,7 @@ Les quatre en gras font échouer la revue sans discussion.
 | R02 | L'application déclare `basePath: '/<slug>'` et n'est jamais servie ailleurs que sous ce chemin. |
 | R03 | `src/middleware.ts` contient `atcMiddleware('<slug>')`, et rien d'autre. |
 | R04 | Le `matcher` est **recopié en littéral** et contient l'entrée `'/'`. Voir §5 — Next refuse un identifiant importé, et sans `'/'` la racine se sert sans session. |
-| **R05** | **Deux niveaux de contrôle.** Le middleware ne suffit pas. **Chaque route et chaque action** — pas seulement celles qui écrivent — commence par `getAtcUser()` puis `hasAppAccess()`. L'audit du 30/08/2026 a trouvé deux relais de MC CRM (`/api/claude`, `/api/odoo`) que le middleware laissait passer et qui n'autorisaient rien eux-mêmes : ils ne « lisaient » que des données, ils les faisaient sortir. |
+| **R05** | **Deux niveaux de contrôle.** Le middleware ne suffit pas. **Chaque route et chaque action** — pas seulement celles qui écrivent — commence par `getAtcUser()` puis `hasAppAccess()`. L'audit du 30/08/2026 a trouvé deux relais de MC CRM (`/api/claude`, `/api/odoo`) que le middleware laissait passer et qui n'autorisaient rien eux-mêmes : ils ne « lisaient » que des données, ils les faisaient sortir. *(`/api/claude` a depuis disparu : le CRM n'appelle plus Claude, c'est Claude qui l'appelle, par une passerelle qui vérifie elle-même le jeton — R20.)* |
 | R06 | Le client Supabase du navigateur est `createBrowserClient` de `@supabase/ssr`. Le client ordinaire ignore les cookies et parle en anonyme. |
 | R07 | Quatre rôles pour toute la plateforme : `owner`, `admin`, `editor`, `viewer`. Une application peut en ignorer un, jamais en inventer un cinquième. |
 | R08 | Chaque solution a son schéma PostgreSQL. Jamais de table métier dans `public`. |
@@ -160,11 +161,14 @@ Les quatre en gras font échouer la revue sans discussion.
 | R11 | Les écritures groupées suivent l'ordre des dépendances, les suppressions l'ordre inverse. |
 | R12 | Toute migration passe par `atc-db`, et **uniquement** par lui : `supabase db push` s'exécute depuis ce dépôt, jamais depuis un dépôt applicatif, et jamais aucun DDL à la main dans le tableau de bord. Une migration poussée ne se modifie pas : on écrit la suivante. |
 | **R13** | **Aucun secret en `NEXT_PUBLIC_*`, aucun `.env` versionné.** La clé `service_role` ne quitte jamais le serveur et ne s'importe jamais depuis un composant `"use client"`. |
-| R14 | Déployer, c'est fusionner sur `main`. Ce qui est en ligne correspond toujours à un commit relu. **Aujourd'hui, seul `mc-sonar` fonctionne ainsi** ; les cinq autres projets Vercel ne sont pas reliés à GitHub et se déploient à la main. Un `git push` y réussit, ne déclenche rien, et l'alias continue de servir l'ancien build — sans le moindre signal. Toute nouvelle application se relie à GitHub **avant** son premier déploiement. |
+| R14 | **Ce qui est en ligne correspond à un commit poussé sur `main`**, et la pastille de la colonne le prouve (R19). Trois voies existent (§9) : `mc-sonar` suit git ; `mc-noptik`, `mc-projet`, `mc-cctp`, `mc-catalogue` se déploient par l'Action GitHub à chaque push ; `mc-hub`, `mc-crm`, `mc-parapheur` se déploient à la main (`vercel deploy --prod`). Sur ces trois-là, un `git push` réussit et ne déclenche rien : c'est la pastille orange qui le signale. Toute nouvelle application prend l'Action **avant** son premier déploiement. |
 | **R15** | **Le schéma d'une nouvelle application n'est PAS exposé dans les réglages Data API.** Tout passe par des enveloppes `public.<slug>_*` en `security definer`. Voir §6 : ce geste a réécrit les privilèges des rôles d'API trois fois sur cette plateforme. |
 | R16 | L'application applique la charte partagée : `node atc-shared/theme/appliquer.mjs <app>/…`. Poser les jetons ne suffit pas — les libellés, les boutons et les émojis restent à reprendre à la main, et cela ne se voit qu'en ouvrant la page. |
 | R17 | **Aucune ressource externe.** La CSP du portail n'autorise ni CDN, ni `eval`, ni caméra. Les bibliothèques se vendorisent dans `public/vendor/`. Voir §5. |
 | R18 | Ce que la base décide, l'application ne le redit pas. Un format d'identifiant, une liste de valeurs, une règle de droit : si elle est en base, l'application l'interroge — elle ne la recopie pas dans un contrôle de forme qui vieillira sans prévenir. |
+| R19 | **Chaque application dit sa version.** Une route `api/version` (derrière le middleware) rend `{ app, version, commit, construit, deploiement, contenu }`, valeurs figées au build par `next.config.ts` (`ATC_VERSION`, `ATC_COMMIT` = `ATC_COMMIT_SHA` ou `VERCEL_GIT_COMMIT_SHA`, `ATC_CONSTRUIT`, `ATC_CONTENU`). La colonne (`rail.js`) l'affiche en pied avec sa pastille, la page `/versions` du portail les rassemble. Sans elle, « est-ce la dernière version ? » n'a pas de réponse. |
+| **R20** | **Un jeton délivré à un client OAuth (Claude…) n'ouvre que les applications de `identity.apps_ouvertes_aux_clients_oauth()`** — aujourd'hui `crm` seul (0091). Une application qui veut s'ouvrir à Claude écrit une migration qui l'ajoute à cette liste, une passerelle MCP qui vérifie le jeton et le droit **à chaque appel** (modèle : `mc-crm/src/lib/mcp`), et ne donne à Claude **aucun outil qui modifie directement une donnée métier** : il propose, une personne décide. Le chemin de la passerelle est exclu du middleware (`publicPaths`) **et** ouvert dans celui du portail (`OUVERT`). |
+| R21 | **Une application écrite ailleurs (Vite, React…) livre ses sources, pas un build.** Elles vivent dans `source/` du dépôt ; `scripts/construire.sh` les construit sous le `basePath`, puis `scripts/poser-plateforme.mjs <slug>` pose charte, colonne, entrée et préfixe les chemins écrits en dur. Un build compilé recopié à la main ne se corrige pas, et des sources vides (fichiers iCloud non téléchargés) sont refusées à la construction. |
 
 ---
 
@@ -446,10 +450,13 @@ Tout ce qui n'est pas une simple lecture passe par une enveloppe :
 `catalogue_articles_aux_versions` est celle qui compte. **Si votre application affiche un chiffrage
 sans passer par elle, elle affiche les prix d'aujourd'hui sur un devis d'hier.**
 
-### L'état des données au 30/08/2026
+### L'état des données au 21/09/2026
 
-À connaître avant de bâtir un écran dessus : **444 articles sans prix** (dont 384 enceintes),
-**2 051 sans photo**, 64 gardés « au doute ». Un écran qui suppose ces champs remplis montrera
+À connaître avant de bâtir un écran dessus : **2 827 articles**, 284 fabricants ; **490 sans prix**,
+**2 027 sans photo**, **98 seulement avec des ports décrits** ; **10 591 propositions** de
+l'analyse en attente de décision (page Propositions de myCatalogue, acceptation en lot possible).
+Une correction ne s'écrit pas directement : elle se **propose** (champ, valeur, source, confiance)
+et une personne la décide — c'est aussi la voie de NOPTIK et de Claude. Un écran qui suppose ces champs remplis montrera
 surtout des vides. Et les études SONAR d'avant le 29/08/2026 ne lient aucun article — un rattrapage
 par nom de modèle reste possible, il n'a pas été fait.
 
@@ -457,7 +464,7 @@ par nom de modèle reste possible, il n'a pas été fait.
 
 ## 8 · Ajouter une application
 
-Six existent. La septième suit ces neuf étapes, **dans cet ordre**. Chacune a été payée au moins
+Sept existent. La suivante suit ces étapes, **dans cet ordre**. Chacune a été payée au moins
 une fois par une application antérieure ; l'ordre n'est pas indicatif.
 
 **1 · Le dépôt.** Sous le compte personnel, jamais sous l'organisation (§3) :
@@ -466,9 +473,11 @@ une fois par une application antérieure ; l'ordre n'est pas indicatif.
 gh repo create tontondubled/mc-<slug> --private --clone
 ```
 
-**2 · La copie.** Partir de `mc-catalogue` ou `mc-parapheur` : ce sont les deux plus récentes, et
-les seules déjà écrites avec les enveloppes `public.*`. Douze fichiers suffisent — `next.config.ts`
-(`basePath: '/<slug>'`), `vercel.json`, `src/middleware.ts`, les routes d'API, `public/app.html`.
+**2 · La copie.** Partir de **`mc-projet`** : c'est la plus récente, et elle porte déjà tout ce
+qu'exige ce contrat — `next.config.ts` (`basePath`, en-têtes, valeurs de version R19),
+`vercel.json`, `src/middleware.ts`, `api/apps`, `api/enter`, `api/health`, `api/version`,
+`.github/workflows/deployer.yml`, `scripts/construire.sh` et `poser-plateforme.mjs` (R21),
+`CLAUDE.md` pour les contributeurs. Pour une page unique sans build, `mc-cctp` ou `mc-catalogue`.
 
 **3 · Le middleware**, littéral, avec l'entrée `'/'` (R03, R04) :
 
@@ -493,7 +502,7 @@ create function <slug>.peut_ecrire() returns boolean language sql stable securit
 -- … les enveloppes public.<slug>_* (R15, §6) …
 
 insert into identity.apps (slug, name, tagline, url, status, sort_order)
-values ('<slug>', 'MC X', '…', 'https://my.atrait-consulting.com/<slug>', 'hidden', 60);
+values ('<slug>', 'MC X', '…', '/<slug>', 'hidden', 80);   -- l'url est un CHEMIN
 
 notify pgrst, 'reload schema';
 ```
@@ -501,15 +510,20 @@ notify pgrst, 'reload schema';
 `status = 'hidden'` jusqu'à la mise en service : une tuile qui mène à un 404 fait perdre confiance
 dans le portail entier.
 
-**5 · Vercel, relié à GitHub tout de suite** (R14). C'est l'étape la plus rentable et la plus
-souvent remise à plus tard : cinq projets sur six ne le sont pas, et un `git push` y réussit sans
-rien déployer. Puis les deux variables du §5 (voir §9 pour la commande).
+**5 · Vercel et l'Action** (R14). Créer le projet Vercel (`vercel link`), poser les deux variables
+du §5 (commandes au §9), mettre à jour `VERCEL_PROJECT_ID` dans `.github/workflows/deployer.yml`,
+et poser le secret `VERCEL_TOKEN` du dépôt (§9). Dès lors, chaque push sur `main` met en ligne.
 
 **6 · Le relais.** Ajouter `<slug>=https://mc-<slug>.vercel.app` à `ATC_APP_ORIGINS` sur `mc-hub`,
 **et redéployer `mc-hub`** — la variable est lue à la compilation. Sans ce redéploiement,
-`/<slug>` répond 404 et tout le reste semble cassé.
+`/<slug>` répond 404 et tout le reste semble cassé. **Remplacer la variable en l'ajoutant d'abord**
+(`vercel env add … --force` ou `vercel env update`), jamais en la retirant en premier : un retrait
+suivi d'un ajout raté laisse **toutes** les applications sans relais. Ajouter aussi l'icône de la
+tuile (`mc-hub/src/components/app-icone.tsx`) et le dépôt à la liste de `mc-hub/src/lib/github.ts`
+(pastille de version).
 
-**7 · La charte** (R16) :
+**7 · La charte** (R16). Pour une application construite (R21), `poser-plateforme.mjs` s'en charge.
+Pour une page unique :
 
 ```bash
 node atc-shared/theme/appliquer.mjs mc-<slug>/public/app.html
@@ -524,7 +538,7 @@ se rend pas sur le CSS.
 que verra quelqu'un qui ne l'a pas, puis passer l'application en `live`.
 
 **9 · La vérification du §11.** Elle n'est pas facultative ; c'est elle qui distingue « ça marche
-chez moi » de « c'est livré ».
+chez moi » de « c'est livré ». Elle se termine par une **pastille verte** en pied de colonne.
 
 ### Ce qu'il ne faut pas faire
 
@@ -538,29 +552,57 @@ chez moi » de « c'est livré ».
 
 ## 9 · Déployer
 
-Branche `feat/…` ou `fix/…` → demande de fusion → une relecture → fusion sur `main` → Vercel
-déploie.
-
-Variables sur Vercel — **le défaut est le bon** pour tout ce qui n'est pas secret :
+**La voie normale : un push sur `main`.** Pour `mc-noptik`, `mc-projet`, `mc-cctp`, `mc-catalogue`
+(et toute nouvelle application), l'Action GitHub « Déployer en production » construit `source/`
+s'il existe (R21), déploie sur Vercel, et écrit un résumé : le déploiement, et la version
+précédente pour revenir en arrière. `mc-sonar` suit git par l'intégration Vercel. `mc-hub`,
+`mc-crm` et `mc-parapheur` se déploient encore à la main :
 
 ```bash
-vercel env add NEXT_PUBLIC_ATC_ID_URL production
-vercel env add CRM_CLE_CONNECTEURS production --sensitive   # un vrai secret
+cd ~/Dev/atrait/mc-<slug> && git push && npx vercel deploy --prod --yes
 ```
 
-Une variable ordinaire se relit ; une variable `--sensitive` ne se relit **jamais**, pas même par
-vous. C'est ce qu'on veut d'une clé, et c'est ce qu'on ne veut pas d'une URL : impossible sinon de
-vérifier une valeur mal collée.
+Pousser **puis** déployer : la pastille reste verte. Déployer avant de pousser donne un cercle
+orange (« déployé, pas encore poussé »), jusqu'au push.
 
-> **`--type config` n'existe plus.** Le drapeau figurait ici et la CLI le refuse désormais
-> (`unknown or unexpected option`, constaté sur la 50.39.0). Le comportement qu'il demandait est
-> devenu le comportement par défaut ; c'est `--sensitive` qui fait l'inverse. Une instruction
-> périmée dans un document qui « fait foi » coûte plus cher qu'une instruction absente.
+**Pourquoi l'Action déploie sans les métadonnées git.** L'offre Vercel Hobby refuse un déploiement
+dont le commit a pour auteur quelqu'un qui n'est pas membre du compte — donc tout commit d'un
+contributeur. L'Action retire `.git` avant `vercel deploy` et passe elle-même le commit
+(`--build-env ATC_COMMIT_SHA=…`) et la ligne « Contenu » (`ATC_CONTENU_SOURCE`).
+
+**Le secret `VERCEL_TOKEN`** d'un dépôt se pose sans jamais s'afficher, depuis le presse-papiers :
+
+```bash
+pbpaste | tr -d '[:space:]' | gh secret set VERCEL_TOKEN -R tontondubled/mc-<slug>
+```
+
+Le jeton (`myatc-ci`, créé sur vercel.com/account/tokens) vaut pour **tout** le compte Vercel :
+ne le poser que dans les dépôts qui en ont besoin, et le renouveler avant son expiration.
+
+**Variables d'environnement** (CLI 59) — toujours avec `--value`, la CLI ne lit rien sur un tube :
+
+```bash
+vercel env add NEXT_PUBLIC_ATC_ID_URL production --type config --value "https://…" --yes
+vercel env add CRM_CLE_CONNECTEURS  production --type secret --value "$(pbpaste)" --yes
+vercel env add ATC_APP_ORIGINS      production --type secret --value "…" --force --yes   # remplacer
+```
+
+Une variable `config` se relit ; une variable `secret` ne se relit **jamais**, pas même par vous —
+c'est ce qu'on veut d'une clé, pas d'une URL. **On remplace en écrasant (`--force` ou
+`vercel env update`), jamais en retirant d'abord.**
+
+**Contributeurs.** Un collaborateur GitHub avec droit de push sur un dépôt déployé par l'Action met
+en ligne à chaque push. Le `CLAUDE.md` du dépôt lui dit où est le code, comment tester, et ce qui
+reste chez Julien : la base (migrations dans `atc-db`), les secrets, `.github/workflows/`,
+`next.config.ts`, `src/middleware.ts`.
+
+**Les migrations** s'écrivent dans `atc-db`, s'essaient dans une transaction annulée
+(`begin; … rollback;`), puis s'appliquent par `supabase db push` depuis `atc-db` (R12).
 
 Épingler la dépendance partagée sur un **tag**, jamais sur `main` :
 
 ```json
-"@atc/auth": "https://github.com/atrait-consulting/atc-shared/archive/refs/tags/v1.0.4.tar.gz"
+"@atc/auth": "https://github.com/atrait-consulting/atc-shared/archive/refs/tags/v1.0.10.tar.gz"
 ```
 
 Le comportement d'authentification de votre application ne doit pas changer parce que quelqu'un a
@@ -672,10 +714,45 @@ l'approcher — un carré illisible ressemble à un code QR, et n'en est pas un.
 
 ---
 
+**Une colonne de navigation qui ne s'affiche pas.** `rail.js` placé dans `<head>` :
+`document.body` y est nul, le script échoue en silence. Il se place **après `<body>`**, et la page
+doit charger `theme/atc.css` (les jetons dont la colonne dépend). `poser-plateforme.mjs` le vérifie.
+
+**Des photos ou des polices en 404 sous `/<slug>`.** Vite préfixe par `--base` ce qu'il connaît,
+pas les chemins écrits en dur dans le code (`` `/photos-generiques/…` ``) ni les polices d'un CSS
+construit sans `--base`. `poser-plateforme.mjs` les préfixe.
+
+**Des sources de 0 octet.** Une archive faite sur un dossier iCloud dont les fichiers ne sont pas
+téléchargés contient des fichiers vides, sans erreur. `construire.sh` refuse de construire.
+
+**`vercel env add` qui n'enregistre rien.** Lancée depuis un script, sans terminal, l'invite
+« Value? » ne reçoit rien ; et la CLI ignore ce qu'on lui passe par un tube. Toujours `--value`.
+
+**Toutes les applications en 404 d'un coup.** `ATC_APP_ORIGINS` retiré puis ré-ajouté, l'ajout
+ayant échoué : le portail s'est reconstruit sans relais (18/09). Écraser, ne jamais retirer d'abord.
+
+**« Git author … must have access to the team ».** Offre Hobby, commit d'un contributeur. Voir §9 :
+l'Action déploie sans métadonnées git.
+
+**Claude utilise un outil qui n'existe plus, ou ignore le nouveau.** claude.ai garde en mémoire la
+liste des outils d'un connecteur : après avoir changé les outils d'une passerelle, se déconnecter
+puis se reconnecter au connecteur. Et ne jamais compter sur la consigne seule pour interdire une
+écriture : retirer l'outil (R20).
+
+**Un jeton Claude qui voit tout.** Un jeton OAuth Supabase est une session complète de la
+personne. Sans 0091, il ouvrait toutes ses applications ; la limite se pose dans `has_app_access`
+et `app_role`, pas dans la passerelle.
+
+**`git bundle verify` échoue sur un bundle sain.** Il doit s'exécuter depuis un dépôt git
+(`git -C <dépôt> bundle verify …`), sinon il échoue sans rapport avec le bundle.
+
+**`supabase db dump` impossible.** Il exige Docker. Les données s'exportent par l'API de gestion
+(voir la sauvegarde complète du 21/09 dans `PLATEFORME.md`, §8).
+
 ## 11 · « Terminé », ça veut dire quoi
 
 Une application MC n'est pas livrée parce qu'elle fonctionne sur votre poste. Elle l'est quand
-les huit points suivants sont vrais.
+les points suivants sont vrais.
 
 - [ ] Elle répond sous `my.atrait-consulting.com/<slug>`, relayée par le portail.
 - [ ] **Une tuile mène à elle depuis le portail** : `identity.apps` la porte en `live`. Une
@@ -693,7 +770,9 @@ les huit points suivants sont vrais.
 - [ ] La charte tient la comparaison côte à côte avec une autre application — pas seulement dans
       les jetons CSS.
 - [ ] Le README dit comment lancer, quelles variables existent, où sont les données.
-- [ ] Le projet Vercel est **relié à GitHub**, et le déploiement se fait par fusion.
+- [ ] Le déploiement se fait par **push sur `main`** (Action GitHub, §9), et la **pastille est verte**
+      en pied de colonne : ce qui tourne est le dernier commit de `main` (R19).
+- [ ] `api/version` répond, et l'application figure sur `/versions`.
 
 ---
 
