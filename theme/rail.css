@@ -94,6 +94,12 @@
 }
 .rail-version:hover { opacity: 1; color: var(--barre-encre-vive); text-decoration: none; }
 .rail-version:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; opacity: 1; }
+/* La pastille devant le commit : dernière version de main (vert), commits
+   pas encore déployés (ambre), déployé avant d'être poussé (cercle ambre). */
+.rail-version-etat { display: inline-block; width: 6px; height: 6px; margin-right: 3px; vertical-align: 1px; border-radius: 50%; background: currentColor; opacity: .35; }
+.rail-version-etat.est-a-jour { background: #5DA824; opacity: 1; }
+.rail-version-etat.est-en-retard { background: #E8A33D; opacity: 1; }
+.rail-version-etat.est-non-pousse { background: transparent; box-shadow: inset 0 0 0 1.5px #E8A33D; opacity: 1; }
 @media (max-width: 900px) { .rail-version { display: none; } }
 
 
