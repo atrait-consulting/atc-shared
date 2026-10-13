@@ -510,8 +510,17 @@ une action d'aboutir. Il s'appuie sur `after()` de Next, qui tient la fonction e
 réponse soit partie — un simple `void promesse()` dépend du bon vouloir de l'hébergeur, et une
 notification perdue ne se voit pas.
 
-Il faut pour cela que **`SLACK_BOT_TOKEN` soit posé sur votre projet Vercel**, en `--type secret`.
-Demandez-le ; ne le recopiez pas d'un autre dépôt.
+**Vous n'avez rien à configurer pour que ça marche.** Si `SLACK_BOT_TOKEN` est posé sur votre
+projet, l'envoi est immédiat. S'il ne l'est pas, le message part quand même : **la racine du portail
+vide la file à chaque passage**, et tout le monde charge `my.` plusieurs fois par jour. Vous troquez
+l'instantané contre quelques minutes — et le jeton reste sur deux projets au lieu de huit.
+
+Si l'immédiateté compte pour votre application, demandez le jeton. Ne le recopiez pas d'un autre
+dépôt : le jour où il tourne, une copie oubliée est une panne silencieuse.
+
+*Le cron du portail ne peut pas jouer ce rôle : l'offre Vercel en place n'autorise qu'un
+déclenchement par jour, et une notification qui part le lendemain à 6 h n'est plus une
+notification.*
 
 ### L'échec se consigne
 
