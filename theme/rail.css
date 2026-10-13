@@ -119,4 +119,36 @@
   }
   .rail-sep { width: 1px; height: 24px; margin: 0 var(--ed1); background: rgba(255, 255, 255, .10); }
 }
+
+/* ── Téléphone : neuf applications sans défilement ───────────────────────
+   Entre 560 et 900 px la barre du bas garde ses libellés et défile si
+   besoin : il y a la place. En dessous, il n'y en a plus. Neuf boutons de
+   46 px plus leurs écarts font 414 px avant le premier caractère, donc sur
+   un écran de 375 px la barre défilait horizontalement — et une barre de
+   navigation qui défile est une barre dont on ignore la moitié, parce que
+   rien ne dit qu'il y a autre chose à droite.
+
+   Les libellés partent donc, et les boutons se partagent la largeur. La
+   marque de deux lettres reste, l'application ouverte garde son filet
+   d'accent, et tout est atteignable d'un seul geste. C'est un échange
+   assumé : on perd le nom, on gagne de ne rien cacher. L'attribut `title`
+   et l'icône de la maison restent, et le nom complet s'obtient en ouvrant
+   l'application ou le portail. */
+@media (max-width: 560px) {
+  :root { --rail-haut: 52px; }
+
+  .rail { gap: 0; padding: var(--ed1) 2px max(var(--ed1), env(safe-area-inset-bottom, 0px));
+          overflow-x: visible; }
+
+  /* `flex: 1 1 0` plutôt qu'une largeur fixe : les boutons se répartissent,
+     quel que soit leur nombre. `min-width: 0` est indispensable, sinon le
+     contenu impose son minimum et le débordement revient. */
+  .rail-btn { flex: 1 1 0; width: auto; min-width: 0; max-width: 54px; padding: var(--ed1) 0; }
+  .rail-label { display: none; }
+  .rail-sep { display: none; }
+
+  /* La cible tactile reste pleine hauteur même sans libellé. */
+  .rail-btn { min-height: 44px; }
+}
+
 /* ==ATC-RAIL:FIN== */
