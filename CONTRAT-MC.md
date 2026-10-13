@@ -518,6 +518,20 @@ l'instantané contre quelques minutes — et le jeton reste sur deux projets au 
 Si l'immédiateté compte pour votre application, demandez le jeton. Ne le recopiez pas d'un autre
 dépôt : le jour où il tourne, une copie oubliée est une panne silencieuse.
 
+**Posez-le par l'outil, jamais à la main :**
+
+```bash
+cd ~/Dev/atrait/<dépôt> && ~/Dev/atrait/atc-shared/outils/poser-jeton.sh SLACK_BOT_TOKEN
+```
+
+Il contrôle la forme **avant** d'écrire, et n'affiche aucun caractère de la valeur — seulement une
+longueur et une position. Trois poses successives ont été perdues le 13/10/2026 faute de ce
+contrôle : de la prose contenant un tiret cadratin (un caractère au-delà de 255 fait *lever*
+`fetch` sur « Cannot convert argument to a ByteString », un message qui ne parle ni de Slack ni du
+jeton), puis un saut de ligne au milieu, puis une valeur écrite **par** Vercel malgré son propre
+avertissement — `--force` transforme son refus en simple « ! ». Chaque échec coûtait un déploiement
+et un essai pour être découvert.
+
 *Le cron du portail ne peut pas jouer ce rôle : l'offre Vercel en place n'autorise qu'un
 déclenchement par jour, et une notification qui part le lendemain à 6 h n'est plus une
 notification.*
