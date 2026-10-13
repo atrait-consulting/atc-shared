@@ -23,6 +23,10 @@ import { after } from 'next/server'
  *   correspondance se fait par `users.lookupByEmail`, sans table à tenir.
  *
  * CE QUI PART, ET CE QUI NE PART PAS
+ *   Un message s'adresse à UNE PERSONNE ou à UN CANAL, jamais aux deux : la
+ *   contrainte est dans le schéma (0154). Une personne se résout par son
+ *   adresse ; un canal s'adresse par son nom.
+ *
  *   Le texte est écrit EN BASE par l'application qui pose le message — elle
  *   seule sait ce qu'elle peut dire. Celui des congés (`rh.message_slack`) ne
  *   contient ni type d'absence, ni motif, ni commentaire : seulement qui,
@@ -148,18 +152,26 @@ export async function envoyerEnAttente(supabase: ClientNotif): Promise<{ envoyes
     }
 
     const partis: string[] = []
-    for (const n of data as Array<{ id: string; app: string; email: string; corps: string }>) {
+    for (const n of data as Array<{ id: string; app: string; email: string | null; canal: string | null; corps: string }>) {
       if (!n.corps) continue
 
-      /* Un échec se CONSIGNE. Sans cela, une adresse que Slack ignore fait
-         repartir le même message à chaque action, indéfiniment, et personne
-         ne le sait : seule une ligne de journal passagère en gardait trace. */
-      const id = await identifiant(n.email, jeton)
-      if (!id) {
-        await supabase.rpc('notif_echoue', {
-          p_id: n.id, p_erreur: `Aucun compte Slack ne porte ${n.email} dans cet espace.`,
-        })
-        continue
+      /* Deux destinations possibles depuis 0154, et une seule à la fois —
+         le schéma l'impose. Un canal s'adresse directement par son nom ;
+         une personne demande d'abord une résolution d'adresse. */
+      let id: string | null
+      if (n.canal) {
+        id = n.canal
+      } else {
+        /* Un échec se CONSIGNE. Sans cela, une adresse que Slack ignore fait
+           repartir le même message à chaque action, indéfiniment, et personne
+           ne le sait : seule une ligne de journal passagère en gardait trace. */
+        id = await identifiant(n.email ?? '', jeton)
+        if (!id) {
+          await supabase.rpc('notif_echoue', {
+            p_id: n.id, p_erreur: `Aucun compte Slack ne porte ${n.email} dans cet espace.`,
+          })
+          continue
+        }
       }
 
       /* Le nom de l'application en tête : la file est commune, et « une
@@ -172,7 +184,17 @@ export async function envoyerEnAttente(supabase: ClientNotif): Promise<{ envoyes
       }, jeton)
 
       if (r.ok) partis.push(n.id)
-      else await supabase.rpc('notif_echoue', { p_id: n.id, p_erreur: `Slack a refusé : ${r.error}` })
+      else {
+        /* `not_in_channel` est l'échec le plus probable sur un canal, et le
+           plus déroutant : le jeton est bon, le canal existe, et Slack
+           refuse. On dit quoi faire, sinon on cherche du côté du jeton. */
+        const quoi = r.error === 'not_in_channel'
+          ? `Le robot n'est pas dans #${n.canal} : invitez-le (/invite @my.ATC) ou ajoutez la portée chat:write.public.`
+          : r.error === 'channel_not_found'
+            ? `Slack ne connaît pas #${n.canal} — nom mal orthographié, ou canal privé où le robot n'est pas.`
+            : `Slack a refusé : ${r.error}`
+        await supabase.rpc('notif_echoue', { p_id: n.id, p_erreur: quoi })
+      }
     }
 
     if (partis.length > 0) await supabase.rpc('notif_envoye', { p_ids: partis })

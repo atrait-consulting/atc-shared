@@ -21,6 +21,10 @@
  *   correspondance se fait par `users.lookupByEmail`, sans table à tenir.
  *
  * CE QUI PART, ET CE QUI NE PART PAS
+ *   Un message s'adresse à UNE PERSONNE ou à UN CANAL, jamais aux deux : la
+ *   contrainte est dans le schéma (0154). Une personne se résout par son
+ *   adresse ; un canal s'adresse par son nom.
+ *
  *   Le texte est écrit EN BASE par l'application qui pose le message — elle
  *   seule sait ce qu'elle peut dire. Celui des congés (`rh.message_slack`) ne
  *   contient ni type d'absence, ni motif, ni commentaire : seulement qui,
