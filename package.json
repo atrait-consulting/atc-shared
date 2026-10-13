@@ -26,6 +26,10 @@
       "types": "./dist/middleware.d.ts",
       "default": "./dist/middleware.js"
     },
+    "./notifier": {
+      "types": "./dist/notifier.d.ts",
+      "default": "./dist/notifier.js"
+    },
     "./tokens": {
       "types": "./dist/tokens.d.ts",
       "default": "./dist/tokens.js"

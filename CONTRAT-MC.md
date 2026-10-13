@@ -6,7 +6,8 @@
 si un autre écrit dit le contraire, c'est celui-ci qui fait foi.
 
 *État au 21/09/2026 — sept applications (cinq en service, NOPTIK et myProjet en bêta). La recette
-pour en ajouter une est au §8, la donnée que toutes partagent au §7, la mise en ligne au §9.*
+pour en ajouter une est au §9, la donnée que toutes partagent au §7, notifier quelqu'un au §8,
+la mise en ligne au §10.*
 
 ---
 
@@ -43,7 +44,7 @@ navigateur ──▶  my.atrait-consulting.com  ──── rewrites ───�
 | `catalogue` | **myCatalogue** | le catalogue d'articles, **commun à tous** — voir §7 | `catalogue` |
 | `parapheur` | **MC PARAPHEUR** | tamponner un PDF et pouvoir le prouver | `parapheur` |
 
-La suivante s'ajoute sans rien toucher aux autres : la recette est au §8.
+La suivante s'ajoute sans rien toucher aux autres : la recette est au §9.
 
 Ce choix d'une origine unique n'est pas cosmétique : il supprime tout partage de cookie entre
 hôtes, et avec lui la famille de pannes qui va avec — session invisible sur iPhone, cookie en
@@ -52,7 +53,7 @@ part.** Si vous en voyez un dans du code, c'est un vestige : supprimez-le.
 
 Deux niveaux de contrôle, toujours les deux :
 
-1. Le **middleware** lit le droit dans le jeton, et **ne fait aucun appel réseau** — voir §10,
+1. Le **middleware** lit le droit dans le jeton, et **ne fait aucun appel réseau** — voir §11,
    « un 504 sur des pages qui marchaient hier ». Il aiguille ; il n'autorise pas.
 2. Toute **écriture** et toute donnée sensible rappelle `hasAppAccess()`, qui interroge la base.
    Un jeton reste valide jusqu'à son expiration ; sans ce second niveau, une révocation
@@ -73,7 +74,7 @@ avec le vrai jeton. Un cookie forgé n'obtient qu'une page qui échoue.
 
 Il n'y a **aucune invitation à envoyer** pour l'accès aux applications. Avec le SSO Microsoft,
 quelqu'un existe dans la plateforme dès sa première connexion, et pas avant. (Pour **contribuer au
-code** d'une application, c'est autre chose : une invitation GitHub sur son dépôt, voir §9.)
+code** d'une application, c'est autre chose : une invitation GitHub sur son dépôt, voir §10.)
 
 **1.** Côté Microsoft, si *Assignment required* est activé sur l'application MC Hub, l'ajouter
 dans **Entra ID → Enterprise applications → MC Hub → Users and groups**.
@@ -161,7 +162,7 @@ Les quatre en gras font échouer la revue sans discussion.
 | R11 | Les écritures groupées suivent l'ordre des dépendances, les suppressions l'ordre inverse. |
 | R12 | Toute migration passe par `atc-db`, et **uniquement** par lui : `supabase db push` s'exécute depuis ce dépôt, jamais depuis un dépôt applicatif, et jamais aucun DDL à la main dans le tableau de bord. Une migration poussée ne se modifie pas : on écrit la suivante. |
 | **R13** | **Aucun secret en `NEXT_PUBLIC_*`, aucun `.env` versionné.** La clé `service_role` ne quitte jamais le serveur et ne s'importe jamais depuis un composant `"use client"`. |
-| R14 | **Ce qui est en ligne correspond à un commit poussé sur `main`**, et la pastille de la colonne le prouve (R19). Trois voies existent (§9) : `mc-sonar` suit git ; `mc-noptik`, `mc-projet`, `mc-cctp`, `mc-catalogue` se déploient par l'Action GitHub à chaque push ; `mc-hub`, `mc-crm`, `mc-parapheur` se déploient à la main (`vercel deploy --prod`). Sur ces trois-là, un `git push` réussit et ne déclenche rien : c'est la pastille orange qui le signale. Toute nouvelle application prend l'Action **avant** son premier déploiement. |
+| R14 | **Ce qui est en ligne correspond à un commit poussé sur `main`**, et la pastille de la colonne le prouve (R19). Trois voies existent (§10) : `mc-sonar` suit git ; `mc-noptik`, `mc-projet`, `mc-cctp`, `mc-catalogue` se déploient par l'Action GitHub à chaque push ; `mc-hub`, `mc-crm`, `mc-parapheur` se déploient à la main (`vercel deploy --prod`). Sur ces trois-là, un `git push` réussit et ne déclenche rien : c'est la pastille orange qui le signale. Toute nouvelle application prend l'Action **avant** son premier déploiement. |
 | **R15** | **Le schéma d'une nouvelle application n'est PAS exposé dans les réglages Data API.** Tout passe par des enveloppes `public.<slug>_*` en `security definer`. Voir §6 : ce geste a réécrit les privilèges des rôles d'API trois fois sur cette plateforme. |
 | R16 | L'application applique la charte partagée : `node atc-shared/theme/appliquer.mjs <app>/…`. Poser les jetons ne suffit pas — les libellés, les boutons et les émojis restent à reprendre à la main, et cela ne se voit qu'en ouvrant la page. |
 | R17 | **Aucune ressource externe.** La CSP du portail n'autorise ni CDN, ni `eval`, ni caméra. Les bibliothèques se vendorisent dans `public/vendor/`. Voir §5. |
@@ -462,7 +463,86 @@ par nom de modèle reste possible, il n'a pas été fait.
 
 ---
 
-## 8 · Ajouter une application
+## 8 · Notifier quelqu'un
+
+La plateforme **ne sait pas expédier de courriel** : pas de SMTP, pas de fonction Edge, et les
+portées Microsoft accordées n'incluent pas `Mail.Send`. Ne le promettez pas à un client.
+
+Ce qui existe, depuis le 13/10/2026, c'est **Slack**. Un robot nommé **my.ATC** — pas `my.CRM`,
+pas `my.Admin` : il parle au nom de la plateforme. Un robot par application, ce serait huit jetons
+à poser, huit identités dans l'espace, et huit copies du même code d'envoi qui divergeraient. Le
+raisonnement du §7 sur le catalogue, mot pour mot.
+
+**Votre application n'écrit pas une ligne de code d'envoi.** Elle pose un message dans la file
+commune, et appelle l'expéditeur partagé.
+
+### Poser un message
+
+Depuis une fonction `security definer` de votre schéma — un déclencheur, le plus souvent :
+
+```sql
+perform notif.poser(
+  'crm',                            -- le slug de votre application
+  v_destinataire_id,                -- un identifiant de identity.profiles
+  'Une relance est due',            -- le titre, pour l'écran des échecs
+  v_texte,                          -- CE QUI PART sur Slack
+  'opportunite', v_objet_id);       -- facultatif : de quoi on parle
+```
+
+**Le texte, c'est vous qui l'écrivez, et en base.** Vous seul savez ce que votre application peut
+dire — et surtout ce qu'elle doit taire. Slack est un **tiers** : le message des congés ne contient
+ni type d'absence, ni motif, ni commentaire, parce qu'un « Maladie » qui y passerait serait une
+donnée de santé sortie du système. Appliquez la même retenue, et faites-la vérifier par le bloc de
+contrôle de votre migration — celui de 0143 crée un congé avec un commentaire privé et **refuse de
+s'appliquer** s'il apparaît dans le message.
+
+### Vider la file
+
+```ts
+import { notifier } from '@atc/auth/notifier'
+
+// à la fin de votre action serveur, après l'écriture
+notifier(supabase)
+```
+
+`notifier` ne se fait jamais attendre et ne lève jamais : une panne de Slack ne doit pas empêcher
+une action d'aboutir. Il s'appuie sur `after()` de Next, qui tient la fonction en vie après que la
+réponse soit partie — un simple `void promesse()` dépend du bon vouloir de l'hébergeur, et une
+notification perdue ne se voit pas.
+
+Il faut pour cela que **`SLACK_BOT_TOKEN` soit posé sur votre projet Vercel**, en `--type secret`.
+Demandez-le ; ne le recopiez pas d'un autre dépôt.
+
+### L'échec se consigne
+
+Un envoi raté incrémente `tentatives` et garde la raison. **Au bout de cinq, le message sort de la
+file** et s'affiche dans l'écran d'administration de l'application concernée (`notif_bloques()`).
+C'est volontaire : sans ce plafond, une adresse que Slack ne connaît pas — un arrivant, un départ,
+un alias — faisait repartir le même envoi indéfiniment sans que personne ne le sache.
+
+Vous ne voyez que les échecs de l'application **dont vous êtes administrateur**. L'administration de
+my.Admin n'a pas à voir les envois ratés du CRM.
+
+### Deux choses à ne pas confondre
+
+| | |
+|---|---|
+| **Le fil** — `<votre_schema>.notifications` | Ce qu'on voit à l'écran, ce qu'on marque **lu**. À vous. |
+| **La file** — `notif.messages` | Ce qui doit **sortir**, et ce qui s'est passé. Commune. |
+
+Les confondre oblige à marquer « lu » ce qui n'a été qu'« envoyé ». Posez les deux.
+
+### Ce qui reste ouvert
+
+La file se vide depuis la session de la personne qui vient d'agir : l'application n'a pas
+d'identité privilégiée. `notif_file` est donc appelable par tout salarié, qui verrait sur deux jours
+à qui des messages sont destinés. Les textes sont maigres et les dates de congé déjà publiques, donc
+la fuite est bornée — mais elle existe, et la fermer demande une clé de service pour le seul vidage.
+**Ne posez rien de sensible dans un corps de message** en attendant.
+
+---
+
+## 9 · Ajouter une application
 
 Sept existent. La suivante suit ces étapes, **dans cet ordre**. Chacune a été payée au moins
 une fois par une application antérieure ; l'ordre n'est pas indicatif.
@@ -511,8 +591,8 @@ notify pgrst, 'reload schema';
 dans le portail entier.
 
 **5 · Vercel et l'Action** (R14). Créer le projet Vercel (`vercel link`), poser les deux variables
-du §5 (commandes au §9), mettre à jour `VERCEL_PROJECT_ID` dans `.github/workflows/deployer.yml`,
-et poser le secret `VERCEL_TOKEN` du dépôt (§9). Dès lors, chaque push sur `main` met en ligne.
+du §5 (commandes au §10), mettre à jour `VERCEL_PROJECT_ID` dans `.github/workflows/deployer.yml`,
+et poser le secret `VERCEL_TOKEN` du dépôt (§10). Dès lors, chaque push sur `main` met en ligne.
 
 **6 · Le relais.** Ajouter `<slug>=https://mc-<slug>.vercel.app` à `ATC_APP_ORIGINS` sur `mc-hub`,
 **et redéployer `mc-hub`** — la variable est lue à la compilation. Sans ce redéploiement,
@@ -537,7 +617,7 @@ se rend pas sur le CSS.
 **8 · Le droit et la mise en service.** Se donner l'accès sur `/admin`, vérifier avec **Voir** ce
 que verra quelqu'un qui ne l'a pas, puis passer l'application en `live`.
 
-**9 · La vérification du §11.** Elle n'est pas facultative ; c'est elle qui distingue « ça marche
+**9 · La vérification du §12.** Elle n'est pas facultative ; c'est elle qui distingue « ça marche
 chez moi » de « c'est livré ». Elle se termine par une **pastille verte** en pied de colonne.
 
 ### Ce qu'il ne faut pas faire
@@ -550,7 +630,7 @@ chez moi » de « c'est livré ». Elle se termine par une **pastille verte** en
 
 ---
 
-## 9 · Déployer
+## 10 · Déployer
 
 **La voie normale : un push sur `main`.** Pour `mc-noptik`, `mc-projet`, `mc-cctp`, `mc-catalogue`
 (et toute nouvelle application), l'Action GitHub « Déployer en production » construit `source/`
@@ -610,7 +690,7 @@ fusionné une PR ailleurs.
 
 ---
 
-## 10 · Les pièges déjà payés
+## 11 · Les pièges déjà payés
 
 Chacun a coûté du temps une fois. Il n'a pas à en coûter deux.
 
@@ -666,7 +746,7 @@ supprimez `.next`, relancez.
 
 **Le build échoue au clone d'une dépendance.** npm normalise toute dépendance GitHub en
 `git+ssh://` dans le lockfile. Une machine de build n'a pas de clé SSH. D'où l'archive HTTPS
-taguée du §9.
+taguée du §10.
 
 **Vercel refuse de déployer un commit.** GitHub ne rattache pas l'adresse de l'auteur à un compte.
 Committez avec une adresse vérifiée sur votre compte GitHub.
@@ -731,7 +811,7 @@ téléchargés contient des fichiers vides, sans erreur. `construire.sh` refuse 
 **Toutes les applications en 404 d'un coup.** `ATC_APP_ORIGINS` retiré puis ré-ajouté, l'ajout
 ayant échoué : le portail s'est reconstruit sans relais (18/09). Écraser, ne jamais retirer d'abord.
 
-**« Git author … must have access to the team ».** Offre Hobby, commit d'un contributeur. Voir §9 :
+**« Git author … must have access to the team ».** Offre Hobby, commit d'un contributeur. Voir §10 :
 l'Action déploie sans métadonnées git.
 
 **Claude utilise un outil qui n'existe plus, ou ignore le nouveau.** claude.ai garde en mémoire la
@@ -749,7 +829,7 @@ et `app_role`, pas dans la passerelle.
 **`supabase db dump` impossible.** Il exige Docker. Les données s'exportent par l'API de gestion
 (voir la sauvegarde complète du 21/09 dans `PLATEFORME.md`, §8).
 
-## 11 · « Terminé », ça veut dire quoi
+## 12 · « Terminé », ça veut dire quoi
 
 Une application MC n'est pas livrée parce qu'elle fonctionne sur votre poste. Elle l'est quand
 les points suivants sont vrais.
@@ -770,7 +850,7 @@ les points suivants sont vrais.
 - [ ] La charte tient la comparaison côte à côte avec une autre application — pas seulement dans
       les jetons CSS.
 - [ ] Le README dit comment lancer, quelles variables existent, où sont les données.
-- [ ] Le déploiement se fait par **push sur `main`** (Action GitHub, §9), et la **pastille est verte**
+- [ ] Le déploiement se fait par **push sur `main`** (Action GitHub, §10), et la **pastille est verte**
       en pied de colonne : ce qui tourne est le dernier commit de `main` (R19).
 - [ ] `api/version` répond, et l'application figure sur `/versions`.
 
