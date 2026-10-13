@@ -134,21 +134,81 @@
    assumé : on perd le nom, on gagne de ne rien cacher. L'attribut `title`
    et l'icône de la maison restent, et le nom complet s'obtient en ouvrant
    l'application ou le portail. */
+/* Le pavé du rail n'existe que sur téléphone. */
+.rail-pave { display: none; }
+
 @media (max-width: 560px) {
   :root { --rail-haut: 52px; }
 
-  .rail { gap: 0; padding: var(--ed1) 2px max(var(--ed1), env(safe-area-inset-bottom, 0px));
-          overflow-x: visible; }
+  /* AU REPOS : la maison, l'application ouverte, et le pavé. Rien d'autre.
+     Deux états ont été essayés avant celui-ci, le 13/10/2026 :
 
-  /* `flex: 1 1 0` plutôt qu'une largeur fixe : les boutons se répartissent,
-     quel que soit leur nombre. `min-width: 0` est indispensable, sinon le
-     contenu impose son minimum et le débordement revient. */
-  .rail-btn { flex: 1 1 0; width: auto; min-width: 0; max-width: 54px; padding: var(--ed1) 0; }
-  .rail-label { display: none; }
+       · la barre d'origine, qui gardait ses libellés et DÉFILAIT — neuf
+         boutons de 46 px font 414 px avant le premier caractère, donc sur un
+         écran de 375 px la moitié des applications était hors de vue, et
+         rien ne le disait ;
+       · les marques seules réparties sur la largeur, qui tenaient toutes
+         mais réduisaient chaque application à deux lettres, en permanence.
+
+     Le pavé garde les deux avantages : une barre qui ne déborde pas, et les
+     NOMS COMPLETS dès qu'on l'ouvre. C'est le choix du commanditaire, et
+     c'est le bon. */
+  .rail {
+    flex-wrap: wrap; gap: var(--ed1);
+    padding: var(--ed1) var(--e2) max(var(--ed1), env(safe-area-inset-bottom, 0px));
+    overflow-x: visible; justify-content: flex-start;
+  }
+  .rail-btn { width: auto; min-width: 0; padding: var(--ed1) var(--e2); min-height: 40px; }
   .rail-sep { display: none; }
 
-  /* La cible tactile reste pleine hauteur même sans libellé. */
-  .rail-btn { min-height: 44px; }
+  /* Fermé : tout disparaît sauf la maison et l'application ouverte. On évite
+     ainsi d'ajouter un conteneur au balisage — trois implémentations du rail
+     existent (React dans deux applications, `rail.js` dans les autres), et
+     une pièce commune se tient mieux quand elle n'exige qu'un bouton de plus
+     à chacune. */
+  .rail:not(.est-ouvert) .rail-btn:not(.rail-home):not(.is-current) { display: none; }
+  .rail-btn.rail-home .rail-label { display: none; }
+
+  /* L'application ouverte s'écrit en toutes lettres : au repos, la barre ne
+     porte plus qu'elle, et il y a toute la place. La tronquer à 44 px comme
+     sur la colonne de bureau donnait « my.Ad… » au milieu d'un vide. */
+  .rail:not(.est-ouvert) .rail-btn.is-current {
+    flex-direction: row; gap: var(--ed2); padding: var(--ed1) var(--e2);
+  }
+  .rail:not(.est-ouvert) .rail-btn.is-current .rail-label {
+    max-width: none; font-size: var(--t1);
+  }
+
+  .rail-pave {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    margin-left: auto; min-height: 40px; padding: 0 var(--e2);
+    border: 0; background: none; border-radius: var(--rayon-md); cursor: pointer;
+    color: var(--barre-encre); font-family: var(--police); font-size: var(--t0);
+  }
+  .rail-pave:hover, .rail-pave[aria-expanded="true"] {
+    background: var(--barre-survol); color: var(--barre-encre-vive);
+  }
+  .rail-pave:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .rail-pave-barres { display: grid; gap: 3px; width: 16px; }
+  .rail-pave-barres i { display: block; height: 2px; border-radius: 1px; background: currentColor; }
+
+  /* Ouvert : la liste entière, en colonnes de noms complets, au-dessus de la
+     barre. `max-height` + défilement pour que vingt applications un jour ne
+     poussent pas la barre hors de l'écran. */
+  .rail.est-ouvert {
+    flex-direction: row; align-content: flex-start;
+    max-height: 70vh; overflow-y: auto;
+    padding-top: var(--e2);
+    box-shadow: 0 -12px 24px rgba(10, 16, 22, .28);
+  }
+  .rail.est-ouvert .rail-btn {
+    flex: 1 1 calc(50% - var(--ed1)); flex-direction: row; justify-content: flex-start;
+    gap: var(--e2); padding: var(--e2);
+  }
+  .rail.est-ouvert .rail-btn .rail-label { display: block; max-width: none; font-size: var(--t1); }
+  .rail.est-ouvert .rail-btn.is-current::after { left: 0; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 22px; border-radius: 0 2px 2px 0; }
+  .rail.est-ouvert .rail-pave { order: 99; flex: 1 1 100%; margin-left: 0; }
 }
 
 /* ==ATC-RAIL:FIN== */

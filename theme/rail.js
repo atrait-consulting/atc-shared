@@ -49,6 +49,27 @@
   nav.innerHTML =
     '<a class="rail-btn rail-home" href="/portail" title="myATC — toutes vos applications">' +
     MAISON + '<span class="rail-label">myATC</span></a>';
+  /* Le pavé. Il n'apparaît que sur téléphone (rail.css) : fermée, la barre
+     du bas n'y montre que la maison et l'application ouverte ; ouverte, elle
+     montre toutes les applications avec leurs noms complets.
+
+     Posé ICI, avant la liste, pour deux raisons. Il doit exister même si
+     `api/apps` ne répond pas — un pavé qui n'ouvre rien vaut mieux qu'un
+     bouton qui apparaît trois secondes après la page. Et `rail.css` le place
+     par `margin-left: auto`, donc sa position ne dépend pas de son rang. */
+  var pave = document.createElement('button');
+  pave.type = 'button';
+  pave.className = 'rail-pave';
+  pave.setAttribute('aria-expanded', 'false');
+  pave.setAttribute('aria-label', 'Toutes les applications');
+  pave.innerHTML = '<span class="rail-pave-barres" aria-hidden="true"><i></i><i></i><i></i></span>';
+  pave.addEventListener('click', function () {
+    var ouvert = nav.classList.toggle('est-ouvert');
+    pave.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+    pave.setAttribute('aria-label', ouvert ? 'Fermer la liste des applications' : 'Toutes les applications');
+  });
+  nav.appendChild(pave);
+
   document.body.insertBefore(nav, document.body.firstChild);
   if (cible) cible.classList.add('has-rail');
 
