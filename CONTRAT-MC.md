@@ -5,9 +5,9 @@
 À lire avant d'écrire la première ligne d'une application MC. Ce document est la référence :
 si un autre écrit dit le contraire, c'est celui-ci qui fait foi.
 
-*État au 21/09/2026 — sept applications (cinq en service, NOPTIK et myProjet en bêta). La recette
-pour en ajouter une est au §9, la donnée que toutes partagent au §7, notifier quelqu'un au §8,
-la mise en ligne au §10.*
+*État au 13/11/2026 — neuf applications inscrites au portail. ODYT a rejoint le 13/11 : son schéma
+est en base par la migration `0209`, son écran n'est pas encore ouvert. La recette pour en ajouter
+une est au §9, la donnée que toutes partagent au §7, notifier quelqu'un au §8, la mise en ligne au §10.*
 
 ---
 
@@ -160,7 +160,7 @@ Les quatre en gras font échouer la revue sans discussion.
 | R09 | Aucune application ne crée de table d'utilisateurs. On stocke un `user_id uuid` et on résout le profil via `/api/moi`. |
 | R10 | Les identifiants sont des **UUID**. Les colonnes sont typées `uuid` : un identifiant maison est refusé à l'écriture. *Une seule dérogation à ce jour, le schéma `cctp` : la règle existe parce que MC CRM fabrique ses identifiants dans le navigateur, où seul un UUID évite les collisions. Là où tout est créé par la base, le compteur suffit — mais cela s'écrit, sinon c'est lu comme un oubli.* |
 | R11 | Les écritures groupées suivent l'ordre des dépendances, les suppressions l'ordre inverse. |
-| R12 | Toute migration passe par `atc-db`, et **uniquement** par lui : `supabase db push` s'exécute depuis ce dépôt, jamais depuis un dépôt applicatif, et jamais aucun DDL à la main dans le tableau de bord. Une migration poussée ne se modifie pas : on écrit la suivante. |
+| R12 | Toute migration passe par `atc-db`, et **uniquement** par lui : `supabase db push --remote` s'exécute depuis ce dépôt, jamais depuis un dépôt applicatif, et jamais aucun DDL à la main dans le tableau de bord. Une migration poussée ne se modifie pas : on écrit la suivante. *Le drapeau `--remote` est obligatoire depuis la CLI v3 (novembre 2026) : sans lui la commande vise la pile Docker locale, pas la production. Idem pour `supabase migration list --remote`, qui donne le prochain numéro libre — à relire juste avant d'écrire le fichier, jamais à réserver. Hors terminal (CI, agent), la CLI v3 exige en plus `--yes` : sans lui elle s'arrête sur une demande de confirmation que personne ne lit.* |
 | **R13** | **Aucun secret en `NEXT_PUBLIC_*`, aucun `.env` versionné.** La clé `service_role` ne quitte jamais le serveur et ne s'importe jamais depuis un composant `"use client"`. |
 | R14 | **Ce qui est en ligne correspond à un commit poussé sur `main`**, et la pastille de la colonne le prouve (R19). Trois voies existent (§10), relevées à neuf le 13/10/2026 : `mc-sonar` suit git ; `mc-catalogue`, `mc-projet`, `mc-noptik` se déploient par l'Action GitHub **à chaque push** ; `mc-cctp`, `mc-hub`, `mc-crm`, `mc-parapheur`, `mc-rh` ont une Action en **`workflow_dispatch` seul** — la mise en ligne se demande (`gh workflow run deployer.yml`). Sur ces cinq-là, un `git push` réussit et ne déclenche rien : c'est la pastille orange qui le signale. Toute nouvelle application prend l'Action **avant** son premier déploiement. |
 | **R15** | **Le schéma d'une nouvelle application n'est PAS exposé dans les réglages Data API.** Tout passe par des enveloppes `public.<slug>_*` en `security definer`. Voir §6 : ce geste a réécrit les privilèges des rôles d'API trois fois sur cette plateforme. |
@@ -700,12 +700,12 @@ reste chez Julien : la base (migrations dans `atc-db`), les secrets, `.github/wo
 `next.config.ts`, `src/middleware.ts`.
 
 **Les migrations** s'écrivent dans `atc-db`, s'essaient dans une transaction annulée
-(`begin; … rollback;`), puis s'appliquent par `supabase db push` depuis `atc-db` (R12).
+(`begin; … rollback;`), puis s'appliquent par `supabase db push --remote` depuis `atc-db` (R12).
 
 Épingler la dépendance partagée sur un **tag**, jamais sur `main` :
 
 ```json
-"@atc/auth": "https://github.com/atrait-consulting/atc-shared/archive/refs/tags/v1.0.10.tar.gz"
+"@atc/auth": "https://github.com/atrait-consulting/atc-shared/archive/refs/tags/v1.0.18.tar.gz"
 ```
 
 Le comportement d'authentification de votre application ne doit pas changer parce que quelqu'un a
