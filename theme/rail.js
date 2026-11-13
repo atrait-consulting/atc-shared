@@ -33,10 +33,36 @@
   function court(nom) {
     return String(nom || '').replace(/^MC\s+/i, '');
   }
+  /* ── Les icônes des applications ───────────────────────────────────────
+     Un dessin par application, repris du portail (mc-hub, AppIcone) pour
+     que les deux se ressemblent. Les deux lettres ne suffisaient pas :
+     myCatalogue, myProjet et my.Admin donnaient toutes les trois « MY ».
+     Une application absente de cette table retombe sur son monogramme,
+     donc en ajouter une ne casse rien. */
+  var ICONES = {
+    'catalogue': '<rect x="3.5" y="3.5" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <rect x="13.5" y="3.5" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <rect x="3.5" y="13.5" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <rect x="13.5" y="13.5" width="7" height="7" rx="1.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />',
+    'cctp': '<path d="M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M14 3.5V8h4M9 12h6M9 15.5h6M9 19h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />',
+    'crm': '<circle cx="9" cy="8.5" r="3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M3.5 19a5.5 5.5 0 0 1 11 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M15.5 6.2a3 3 0 0 1 0 4.6M17.2 14.2a5 5 0 0 1 3.3 4.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />',
+    'noptik': '<rect x="3.5" y="4" width="7" height="6" rx="1.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <rect x="13.5" y="14" width="7" height="6" rx="1.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M10.5 7h3a2 2 0 0 1 2 2v3M13.5 17h-3a2 2 0 0 1-2-2v-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />',
+    'outil-abbak': '<rect x="3.5" y="4.5" width="17" height="11" rx="1.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M8 20h8M12 15.5V20" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M8.5 10c1-1.6 2.2-2.4 3.5-2.4s2.5.8 3.5 2.4c-1 1.6-2.2 2.4-3.5 2.4S9.5 11.6 8.5 10z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <circle cx="12" cy="10" r=".9" fill="currentColor" />',
+    'outil-abbak-cable': '<path d="M3.5 17c2.5 0 2.5-10 5-10s2.5 10 5 10 2.5-10 5-10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <circle cx="18.5" cy="17" r="3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M17.2 17h2.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />',
+    'parapheur': '<path d="M9.5 10.5V7a2.5 2.5 0 0 1 5 0v3.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M5 14.5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2V17H5v-2.5z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M7 20.5h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />',
+    'projet': '<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-10z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M8 12.5h8M8 15.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />',
+    'rh': '<path d="M4.5 7.5a1.5 1.5 0 0 1 1.5-1.5h12a1.5 1.5 0 0 1 1.5 1.5v11a1.5 1.5 0 0 1-1.5 1.5h-12a1.5 1.5 0 0 1-1.5-1.5v-11z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M4.5 10.5h15M8.5 4.5v4M15.5 4.5v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M9 14.8l2.1 2.1 4-4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />',
+    'sonar': '<path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /> <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18.3 6.5a8 8 0 0 1 0 11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />',
+  };
+
   /** Les deux lettres de la pastille, quand l'application n'a pas d'icône. */
   function marque(nom) {
     var c = court(nom).replace(/[^A-Za-zÀ-ÿ]/g, '');
     return c.slice(0, 2).toUpperCase();
+  }
+  /** L'icône d'une application, ou son monogramme à défaut. */
+  function pastille(app) {
+    var d = ICONES[app.slug];
+    return d
+      ? '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' + d + '</svg>'
+      : echapper(marque(app.name));
   }
   function echapper(s) {
     return String(s == null ? '' : s)
@@ -89,7 +115,7 @@
         a.href = app.url;
         a.title = app.name;
         if (app.slug === moi) a.setAttribute('aria-current', 'page');
-        a.innerHTML = '<span class="rail-mark">' + echapper(marque(app.name)) + '</span>' +
+        a.innerHTML = '<span class="rail-mark">' + pastille(app) + '</span>' +
                       '<span class="rail-label">' + echapper(court(app.name)) + '</span>';
         nav.appendChild(a);
       });

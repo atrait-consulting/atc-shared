@@ -73,7 +73,11 @@
 }
 .rail-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-.rail-mark { font-size: var(--t2); font-weight: 600; letter-spacing: .02em; line-height: 17px; }
+/* La pastille porte une icône quand l'application en a une, son monogramme
+   sinon : les deux doivent occuper la même place. */
+.rail-mark { font-size: var(--t2); font-weight: 600; letter-spacing: .02em; line-height: 17px;
+             display: grid; place-items: center; height: 21px; }
+.rail-mark svg { width: 21px; height: 21px; display: block; }
 .rail-icone { width: 17px; height: 17px; display: block; }
 
 .rail-label {
