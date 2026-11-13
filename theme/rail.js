@@ -61,7 +61,7 @@
   function pastille(app) {
     var d = ICONES[app.slug];
     return d
-      ? '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' + d + '</svg>'
+      ? '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">' + d + '</svg>'
       : echapper(marque(app.name));
   }
   function echapper(s) {
