@@ -1,0 +1,115 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Vérifier — @atc/auth (atc-shared)
+# ═══════════════════════════════════════════════════════════════════════════
+# Ce dépôt n'avait aucun contrôle, alors que les neuf applications en
+# dépendent. Posé le 16/11/2026, le jour où `main` est passé derrière une
+# demande de fusion : sans Action, cette demande était une cérémonie sans
+# rien qui s'exécute dessus.
+#
+# IL NE RESSEMBLE PAS AUX TROIS AUTRES `verifier.yml`, et c'est voulu : ce
+# dépôt n'est pas une application, c'est la bibliothèque que les autres
+# installent. Il a deux dangers qui lui sont propres, et chacun a sa marche.
+#
+# ── 1 · `dist/` EST COMMITÉ, ET C'EST LUI QUE LES APPLIS REÇOIVENT ─────────
+# Les applications installent par l'URL d'un tarball d'étiquette :
+#
+#   "@atc/auth": ".../atc-shared/archive/refs/tags/v1.0.18.tar.gz"
+#
+# Une archive GitHub n'est pas un paquet npm : c'est l'arbre du dépôt tel
+# quel. npm ne lance donc NI `prepare` NI `build` à l'installation — il prend
+# `dist/` tel qu'il est commité. Conséquence : modifier `src/` et étiquetter
+# sans recompiler livre aux neuf applications l'ANCIEN code compilé, sans
+# message, sans échec de construction, sans rien. Le type serait juste, la
+# compilation passerait, et le comportement serait celui d'avant.
+#
+# La marche « dist à jour » ferme ça : on recompile et on exige que le
+# résultat soit identique à ce qui est commité. C'est le seul contrôle de ce
+# fichier qui n'existe nulle part ailleurs, et c'est celui qui compte.
+#
+# ── 2 · LE DÉPÔT DOIT RESTER PUBLIC ───────────────────────────────────────
+# L'URL ci-dessus répond sans jeton. C'est ce qui fait que les neuf
+# constructions Vercel aboutissent — et ce n'était écrit nulle part avant ce
+# fichier. Quelqu'un qui « range » en passant le dépôt en privé casse les
+# neuf applications d'un coup, de bonne foi, et le lien entre la cause et
+# l'effet est tout sauf évident.
+#
+# La marche « dépôt public » le dit en exécutable plutôt qu'en commentaire :
+# si la visibilité change, cette Action échoue et nomme la conséquence. Elle
+# tourne aussi sur un dépôt privé, donc le garde-fou survit à ce qu'il garde.
+#
+# ── CE QU'IL N'Y A PAS ────────────────────────────────────────────────────
+# Pas de `npm test` : ce dépôt n'a pas de tests. Le jour où il en aura, la
+# marche se glisse avant les types.
+#
+# Pas de `npm run theme:apps` ni `aligner:apps` : ces scripts écrivent dans
+# les dépôts voisins par des chemins relatifs (`../mc-cctp/...`). Ils ne
+# veulent rien dire hors du poste de Julien et échoueraient ici.
+#
+# Cette Action ne reçoit AUCUN secret et ne déploie rien. La compilation
+# passe sans aucune variable d'environnement : un contrôle qui tourne sur une
+# proposition de fusion ne doit pas porter d'accès à l'hébergement.
+#
+# Déclenchement : les pushes sur `main` — qui ne peuvent plus venir que d'une
+# fusion — et toute demande de fusion. Pas les pushes de branche, que la
+# demande de fusion couvre déjà.
+# ═══════════════════════════════════════════════════════════════════════════
+name: Vérifier
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: verifier-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verifier:
+    name: Types, construction, dist à jour
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` déclenche `prepare`, qui compile déjà dans dist/. La marche
+      # de construction plus bas est donc volontairement redondante : elle
+      # rend l'échec lisible si c'est la compilation qui casse, au lieu de le
+      # noyer dans la sortie de l'installation.
+      - name: Installer
+        run: npm ci
+
+      - name: Types
+        run: npm run typecheck
+
+      - name: Construction
+        run: npm run build
+
+      - name: dist à jour
+        run: |
+          if ! git diff --quiet -- dist; then
+            echo "::error title=dist n'est pas à jour::Le contenu de dist/ ne correspond pas à ce que src/ compile. Les applications installent dist/ TEL QUEL depuis le tarball de l'étiquette : livrer ceci leur donnerait l'ancien code compilé, en silence. Lancer « npm run build » puis commiter dist/."
+            echo "── fichiers qui diffèrent ──"
+            git diff --stat -- dist
+            exit 1
+          fi
+          echo "dist/ correspond à src/."
+
+      - name: Dépôt public
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prive=$(gh api "repos/${{ github.repository }}" --jq .private)
+          if [ "$prive" != "false" ]; then
+            echo "::error title=Le dépôt n'est plus public::Les neuf applications installent @atc/auth par l'URL d'un tarball d'étiquette, SANS jeton. Un dépôt privé fait échouer les neuf constructions Vercel. Si le passage en privé est voulu, il faut d'abord donner un jeton à chaque construction — et retirer cette marche en connaissance de cause."
+            exit 1
+          fi
+          echo "Dépôt public : les tarballs d'étiquette restent joignables sans jeton."
