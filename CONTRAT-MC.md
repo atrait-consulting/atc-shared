@@ -5,9 +5,11 @@
 À lire avant d'écrire la première ligne d'une application MC. Ce document est la référence :
 si un autre écrit dit le contraire, c'est celui-ci qui fait foi.
 
-*État au 13/11/2026 — neuf applications inscrites au portail. ODYT a rejoint le 13/11 : son schéma
-est en base par la migration `0209`, son écran n'est pas encore ouvert. La recette pour en ajouter
-une est au §9, la donnée que toutes partagent au §7, notifier quelqu'un au §8, la mise en ligne au §10.*
+*État au 16/11/2026 — neuf applications inscrites au portail. ODYT a rejoint le 13/11 : son schéma
+est en base par la migration `0209`, son écran n'est pas encore ouvert. **La mise en ligne se demande
+désormais partout** : les trois derniers déclencheurs `push` ont été retirés le 16/11 (§10 et R14).
+La recette pour en ajouter une est au §9, la donnée que toutes partagent au §7, notifier quelqu'un
+au §8, la mise en ligne au §10.*
 
 ---
 
@@ -162,7 +164,7 @@ Les quatre en gras font échouer la revue sans discussion.
 | R11 | Les écritures groupées suivent l'ordre des dépendances, les suppressions l'ordre inverse. |
 | R12 | Toute migration passe par `atc-db`, et **uniquement** par lui : `supabase db push --remote` s'exécute depuis ce dépôt, jamais depuis un dépôt applicatif, et jamais aucun DDL à la main dans le tableau de bord. Une migration poussée ne se modifie pas : on écrit la suivante. *Le drapeau `--remote` est obligatoire depuis la CLI v3 (novembre 2026) : sans lui la commande vise la pile Docker locale, pas la production. Idem pour `supabase migration list --remote`, qui donne le prochain numéro libre — à relire juste avant d'écrire le fichier, jamais à réserver. Hors terminal (CI, agent), la CLI v3 exige en plus `--yes` : sans lui elle s'arrête sur une demande de confirmation que personne ne lit.* |
 | **R13** | **Aucun secret en `NEXT_PUBLIC_*`, aucun `.env` versionné.** La clé `service_role` ne quitte jamais le serveur et ne s'importe jamais depuis un composant `"use client"`. |
-| R14 | **Ce qui est en ligne correspond à un commit poussé sur `main`**, et la pastille de la colonne le prouve (R19). Trois voies existent (§10), relevées à neuf le 13/10/2026 : `mc-sonar` suit git ; `mc-catalogue`, `mc-projet`, `mc-noptik` se déploient par l'Action GitHub **à chaque push** ; `mc-cctp`, `mc-hub`, `mc-crm`, `mc-parapheur`, `mc-rh` ont une Action en **`workflow_dispatch` seul** — la mise en ligne se demande (`gh workflow run deployer.yml`). Sur ces cinq-là, un `git push` réussit et ne déclenche rien : c'est la pastille orange qui le signale. Toute nouvelle application prend l'Action **avant** son premier déploiement. |
+| R14 | **Ce qui est en ligne correspond à un commit poussé sur `main`**, et la pastille de la colonne le prouve (R19). Deux voies existent (§10), relevées le 16/11/2026 : `mc-sonar` suit git par l'intégration Vercel ; les **huit autres** ont une Action en **`workflow_dispatch` seul** — la mise en ligne se demande (`gh workflow run "Déployer en production"`). **Aucune application ne se déploie plus à un push** : les trois derniers déclencheurs ont été retirés le 16/11/2026 de `mc-catalogue`, `mc-projet` et `mc-noptik`. Un `git push` réussit donc et ne déclenche rien ; la pastille orange le signale, et c'est l'état normal de l'attente entre un push et sa mise en ligne, non un défaut. Toute nouvelle application prend l'Action **avant** son premier déploiement, en `workflow_dispatch` seul. |
 | **R15** | **Le schéma d'une nouvelle application n'est PAS exposé dans les réglages Data API.** Tout passe par des enveloppes `public.<slug>_*` en `security definer`. Voir §6 : ce geste a réécrit les privilèges des rôles d'API trois fois sur cette plateforme. |
 | R16 | L'application applique la charte partagée : `node atc-shared/theme/appliquer.mjs <app>/…`. Poser les jetons ne suffit pas — les libellés, les boutons et les émojis restent à reprendre à la main, et cela ne se voit qu'en ouvrant la page. |
 | R17 | **Aucune ressource externe.** La CSP du portail n'autorise ni CDN, ni `eval`, ni caméra. Les bibliothèques se vendorisent dans `public/vendor/`. Voir §5. |
@@ -615,7 +617,10 @@ dans le portail entier.
 
 **5 · Vercel et l'Action** (R14). Créer le projet Vercel (`vercel link`), poser les deux variables
 du §5 (commandes au §10), mettre à jour `VERCEL_PROJECT_ID` dans `.github/workflows/deployer.yml`,
-et poser le secret `VERCEL_TOKEN` du dépôt (§10). Dès lors, chaque push sur `main` met en ligne.
+et poser le secret `VERCEL_TOKEN` du dépôt (§10). Dès lors la mise en ligne **se demande** :
+`gh workflow run "Déployer en production"`. **Ne pas ajouter de déclencheur `push`** : les neuf
+voies ont été ramenées à la demande le 16/11/2026, et une nouvelle application qui déploierait au
+push rouvrirait seule ce qui vient d'être fermé.
 
 **6 · Le relais.** Ajouter `<slug>=https://mc-<slug>.vercel.app` à `ATC_APP_ORIGINS` sur `mc-hub`,
 **et redéployer `mc-hub`** — la variable est lue à la compilation. Sans ce redéploiement,
@@ -655,18 +660,25 @@ chez moi » de « c'est livré ». Elle se termine par une **pastille verte** en
 
 ## 10 · Déployer
 
-**La voie normale : un push sur `main`.** Pour `mc-noptik`, `mc-projet`, `mc-cctp`, `mc-catalogue`
-(et toute nouvelle application), l'Action GitHub « Déployer en production » construit `source/`
-s'il existe (R21), déploie sur Vercel, et écrit un résumé : le déploiement, et la version
-précédente pour revenir en arrière. `mc-sonar` suit git par l'intégration Vercel. `mc-hub`,
-`mc-crm` et `mc-parapheur` se déploient encore à la main :
+**La voie normale : demander la mise en ligne.** Les huit applications qui ont une Action
+— toutes sauf `mc-sonar`, qui suit git par l'intégration Vercel — se déploient par le même geste :
 
 ```bash
-cd ~/Dev/atrait/mc-<slug> && git push && npx vercel deploy --prod --yes
+cd ~/Dev/atrait/mc-<slug> && git push && gh workflow run "Déployer en production"
 ```
 
+ou, dans le navigateur : onglet Actions du dépôt, « Déployer en production », bouton
+« Run workflow ». L'Action construit `source/` s'il existe (R21), déploie sur Vercel, et écrit un
+résumé : le déploiement, et la version précédente pour revenir en arrière.
+
+**Pousser et publier sont deux gestes, depuis le 16/11/2026.** Les trois derniers déclencheurs
+`push` ont été retirés ce jour-là de `mc-catalogue`, `mc-projet` et `mc-noptik`. Un push qui
+n'était pas prêt partait aussitôt en production, et un déploiement recharge les onglets ouverts :
+trois fiches du CRM ont été perdues ainsi le 14/10/2026.
+
 Pousser **puis** déployer : la pastille reste verte. Déployer avant de pousser donne un cercle
-orange (« déployé, pas encore poussé »), jusqu'au push.
+orange (« déployé, pas encore poussé »), jusqu'au push. Pousser sans déployer donne « en retard » :
+c'est désormais l'état normal de l'attente, pas une anomalie.
 
 **Pourquoi l'Action déploie sans les métadonnées git.** L'offre Vercel Hobby refuse un déploiement
 dont le commit a pour auteur quelqu'un qui n'est pas membre du compte — donc tout commit d'un
@@ -694,8 +706,11 @@ Une variable `config` se relit ; une variable `secret` ne se relit **jamais**, p
 c'est ce qu'on veut d'une clé, pas d'une URL. **On remplace en écrasant (`--force` ou
 `vercel env update`), jamais en retirant d'abord.**
 
-**Contributeurs.** Un collaborateur GitHub avec droit de push sur un dépôt déployé par l'Action met
-en ligne à chaque push. Le `CLAUDE.md` du dépôt lui dit où est le code, comment tester, et ce qui
+**Contributeurs.** Un collaborateur GitHub avec droit d'écriture **lance lui-même** la mise en
+ligne : `workflow_dispatch` ne demande rien de plus que ce droit. Vérifié le 16/11/2026 sur
+`mc-catalogue`, `mc-projet` et `mc-noptik` — `write` et `push: true` pour Clovis et David,
+déclencheur présent sur `main`, workflow à l'état `active`. Personne n'a donc à passer par Julien
+pour publier son propre travail. Le `CLAUDE.md` du dépôt lui dit où est le code, comment tester, et ce qui
 reste chez Julien : la base (migrations dans `atc-db`), les secrets, `.github/workflows/`,
 `next.config.ts`, `src/middleware.ts`.
 
@@ -873,8 +888,9 @@ les points suivants sont vrais.
 - [ ] La charte tient la comparaison côte à côte avec une autre application — pas seulement dans
       les jetons CSS.
 - [ ] Le README dit comment lancer, quelles variables existent, où sont les données.
-- [ ] Le déploiement se fait par **push sur `main`** (Action GitHub, §10), et la **pastille est verte**
-      en pied de colonne : ce qui tourne est le dernier commit de `main` (R19).
+- [ ] Le déploiement se **demande** (`gh workflow run "Déployer en production"`, §10), l'Action n'a
+      **pas** de déclencheur `push`, et la **pastille est verte** en pied de colonne après la mise en
+      ligne : ce qui tourne est le dernier commit de `main` (R19).
 - [ ] `api/version` répond, et l'application figure sur `/versions`.
 
 ---
